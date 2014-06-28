@@ -1,0 +1,198 @@
+package mobi.rectour.mapa.funcoes.v2.funcMyLocation;
+
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+
+import android.content.Context;
+import android.location.Location;
+import android.os.AsyncTask;
+import android.os.Bundle;
+import android.telephony.TelephonyManager;
+import android.telephony.gsm.GsmCellLocation;
+
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.GooglePlayServicesClient.ConnectionCallbacks;
+import com.google.android.gms.common.GooglePlayServicesClient.OnConnectionFailedListener;
+import com.google.android.gms.location.LocationClient;
+import com.google.android.gms.location.LocationListener;
+import com.google.android.gms.location.LocationRequest;
+import com.google.android.gms.maps.model.LatLng;
+
+public class BuscarLocalizacaoAtualV2 implements  ConnectionCallbacks,
+		OnConnectionFailedListener, LocationListener{
+
+	public interface ICallBackMinhaLocalizacao{
+		void upDateLocalizacao(LatLng localizacaoAtual);
+	}
+	
+	
+	public static ICallBackMinhaLocalizacao icallMinhaLocalizacao;
+	
+	Context c;
+	
+	private LocationClient mLocationClient;
+	
+	private static LatLng latLng;
+	
+	
+	public static LatLng getLocalizacao(){
+		LatLng ultimaLocalizacao =  new LatLng(-8.060238799021613,-34.87238612025976);
+		return latLng == null ? ultimaLocalizacao : latLng ;
+	}
+	
+	// These settings are the same as the settings for the map. They will in
+	// fact give you updates
+	// at the maximal rates currently possible.
+	private static final LocationRequest REQUEST = LocationRequest.create()
+			.setInterval(5000) // 5 seconds
+			.setFastestInterval(16) // 16ms = 60fps
+			.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+
+	public BuscarLocalizacaoAtualV2(Context context) {
+		
+		this.c = context;
+		
+		if (mLocationClient == null) {
+			mLocationClient = new LocationClient(context, this, // ConnectionCallbacks 
+					this); // OnConnectionFailedListener
+		}
+		
+		TelephonyManager tm  = (TelephonyManager)context.getSystemService(Context.TELEPHONY_SERVICE); 
+		GsmCellLocation location = (GsmCellLocation) tm.getCellLocation();
+		
+		cellID = location.getCid();
+		lac = location.getLac();
+		
+		new BuscarLocalizacaoAsync().execute();
+	}
+	
+	class BuscarLocalizacaoAsync extends AsyncTask<Void, Void, Void>{
+
+		@Override
+		protected Void doInBackground(Void... params) {
+
+			latLng = getLatLong();
+			return null;
+		}
+		
+		@Override
+		protected void onPostExecute(Void result) {
+			super.onPostExecute(result);
+			mLocationClient.connect();
+		}
+		
+	}
+
+	int cellID;
+	int lac;
+	
+	private LatLng getLatLong() {	
+		String url = "http://www.google.com/glm/mmap";
+		double lat = 0;
+		double lng = 0;
+		LatLng retorno = new LatLng(lat, lng);
+		
+	    try{
+			
+			HttpURLConnection conWS = (HttpURLConnection) (new URL(url)).openConnection();
+			
+			conWS.setDoInput(true);
+			conWS.setDoOutput(true);
+			conWS.setRequestMethod("POST");
+			
+			MyRequestEntity mre = new MyRequestEntity(cellID, lac);
+			mre.writeRequest(conWS.getOutputStream());
+			
+			DataInputStream dis = new DataInputStream(conWS.getInputStream());
+			dis.readShort();
+		    dis.readByte();
+		    
+		    int code = dis.readInt();
+		    if (code == 0) {
+		        lat = (double) dis.readInt() / 1000000D;
+		        lng = (double) dis.readInt() / 1000000D;
+		        int var1 =  dis.readInt();
+		        int var2 = dis.readInt();
+		        String var3 = dis.readUTF();
+		        retorno = new LatLng(lat, lng);
+		    }
+			//result = toStringSW(conWS.getInputStream());
+			
+		}catch (Exception e) {
+			System.out.print(e.getMessage());
+		}
+		
+	    return retorno ;
+	}
+	
+	public void cancelarRequests() {
+		
+		if (mLocationClient != null) {
+            mLocationClient.disconnect();
+        }
+	}
+
+	public void onLocationChanged(Location location) {
+		
+		float accuracy = location.getAccuracy();
+        long time = location.getTime();
+		
+		
+		latLng = new LatLng(location.getLatitude(), location.getLongitude());
+		
+		if(icallMinhaLocalizacao != null){
+			icallMinhaLocalizacao.upDateLocalizacao(latLng);
+		}
+		
+		
+	}
+	
+	public void onConnectionFailed(ConnectionResult arg0) {}
+	
+	public void onConnected(Bundle connectionHint) {
+		
+		 mLocationClient.requestLocationUpdates(REQUEST, this);  // LocationListener
+	}
+	
+	public void onDisconnected() {
+	}
+	
+	private class MyRequestEntity{
+		
+	    int cellId, lac;
+
+	    public MyRequestEntity(int cellId, int lac) {
+	        this.cellId = cellId;
+	        this.lac = lac;
+	    }
+
+	    public void writeRequest(OutputStream outputStream) throws
+			IOException {
+	        DataOutputStream os = new DataOutputStream(outputStream);
+	        os.writeShort(21);
+	        os.writeLong(0);
+	        os.writeUTF("br");
+	        os.writeUTF("Android");
+	        os.writeUTF("1.3.1");
+	        os.writeUTF("Web");
+	        os.writeByte(27);
+
+	        os.writeInt(0);
+	        os.writeInt(0);
+	        os.writeInt(3);
+	        os.writeUTF("");
+	        os.writeInt(cellId);  // CELL-ID
+	        os.writeInt(lac);     // LAC
+	        os.writeInt(0);
+	        os.writeInt(0);
+	        os.writeInt(0);
+	        os.writeInt(0);
+	        os.flush();
+	    }
+	}
+
+}

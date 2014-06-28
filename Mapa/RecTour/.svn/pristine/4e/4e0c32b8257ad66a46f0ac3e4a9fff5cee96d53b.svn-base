@@ -1,0 +1,44 @@
+package mobi.rectour.recHoteis.gui;
+
+import android.content.Context;
+import android.database.Cursor;
+import android.support.v4.widget.CursorAdapter;
+import android.view.View;
+import android.view.View.OnClickListener;
+import android.view.ViewGroup;
+import android.widget.TextView;
+
+public class CursorADPTListaLocais extends CursorAdapter {
+
+	
+	//
+	private OnClickListener listner;
+	
+	public CursorADPTListaLocais(Context context, Cursor cursor,OnClickListener listner) {
+		super(context, cursor, true);
+		this.listner = listner;
+	}
+
+	@Override
+	public void bindView(View view, Context context, Cursor cursor) {
+		
+		TextView ruas;
+		String stRuas = cursor.getString(cursor.getColumnIndex("name"));
+		//(ruas =  (TextView) view.findViewById(R.id.tvRuas)).setText(stRuas);
+		//String placa = cursor.getString(cursor.getColumnIndex(BdPlacas.CAMPO_TB_PLACA));
+		//ruas.setTag(stRuas);
+		
+		
+	}
+
+	@Override
+	public View newView(Context context, Cursor cursor, ViewGroup parent) {
+		
+		//LayoutInflater inflater = LayoutInflater.from(parent.getContext());
+        //View retView = inflater.inflate(R.layout.mapa_ruas_list_item, parent, false);
+		
+		
+		return parent;
+	}
+
+}

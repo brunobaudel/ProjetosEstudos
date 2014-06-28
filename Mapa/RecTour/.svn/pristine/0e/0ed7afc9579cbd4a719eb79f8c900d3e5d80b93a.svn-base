@@ -1,0 +1,152 @@
+package mobi.rectour.recRestaurantes.gui;
+
+import mobi.rectour.recRestaurantes.entidades.Parada;
+import android.content.ContentValues;
+import android.content.Context;
+import android.database.Cursor;
+
+public class RepositorioRoteirizador {
+	/*
+	public final static String CAMPO_TB_LATITUDE_SEN = "latitude_sen"  ;
+	public final static String CAMPO_TB_LATITUDE_COS = "latitude_cos"  ;
+	public final static String CAMPO_TB_LONGITUDE_SEN = "longitude_sen";
+	public final static String CAMPO_TB_LONGITUDE_COS = "longitude_cos";
+	
+	public static final String TB_PARADAS = "CREATE TABLE [paradas] ("
+			+ "[_id]                          INTEGER  PRIMARY KEY AUTOINCREMENT,"
+			+ "[Latitude]     				  INTEGER    NOT NULL,"
+			+ "[Longitude]    				  INTEGER    NOT NULL,"
+			+ "[codParada]    			      INTEGER  	 NULL,"
+			+ "[numeroParada]		     	  VARCHAR    NULL,"
+			+ "[descricao]    				  VARCHAR  	 NULL,"
+			// variaveis responsaveis pelo calculo de distancia
+			+ CAMPO_TB_LATITUDE_SEN + " INTEGER  NULL," 
+			+ CAMPO_TB_LATITUDE_COS + " INTEGER  NULL," 
+			+ CAMPO_TB_LONGITUDE_SEN + " INTEGER  NULL,"
+			+ CAMPO_TB_LONGITUDE_COS + " INTEGER  NULL)";
+	
+	
+	public static final String TB_LINHAS = "CREATE TABLE [linhaOnibus] ("
+			+ "[_id]                          INTEGER  PRIMARY KEY AUTOINCREMENT,"
+			+ "[codLinha]     				  INTEGER    NULL,"
+			+ "[numeroLinha]    		      VARCHAR    NULL,"
+			+ "[nomeLinha]    			      VARCHAR  	 NULL)";
+	
+	
+	
+	
+	private CriarBD db;
+	
+	public RepositorioRoteirizador(Context context) {
+		db = CriarBD.getBD(context);
+	}
+	
+	//****************************** Paradas *******************************************
+	
+	/***
+	 * Insere a parada
+	 */
+	/*public void inserirParada(Parada parada) {
+
+		boolean resultado = true;
+
+		try {
+
+			ContentValues valoresIniciais = new ContentValues();
+			
+			valoresIniciais.put("Latitude",       		   parada.getLatitude()    );
+			valoresIniciais.put("Longitude",      		   parada.getLongitude()   );
+			valoresIniciais.put("codParada",      		   parada.getCodParada()   );
+			valoresIniciais.put("numero", 		  		   parada.getNumeroParada());
+			valoresIniciais.put("descricao",          	   parada.getDescricao()   );
+			valoresIniciais.put(CAMPO_TB_LATITUDE_SEN,     parada.getCAMPO_TB_LATITUDE_SEN() );
+			valoresIniciais.put(CAMPO_TB_LATITUDE_COS,     parada.getCAMPO_TB_LATITUDE_COS() );
+			valoresIniciais.put(CAMPO_TB_LONGITUDE_SEN,    parada.getCAMPO_TB_LONGITUDE_SEN() );
+			valoresIniciais.put(CAMPO_TB_LONGITUDE_COS,    parada.getCAMPO_TB_LONGITUDE_COS() );
+
+			db.inserir("paradas", valoresIniciais);
+			
+		} catch (Exception e) {
+			resultado = false;
+		}
+	}
+	
+	public void deleteParadas(){
+		
+		try {
+			db.remover("paradas", null);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+	
+	/**
+	 * Recupera os pontos em relação ao ponto enviado.
+	 * @param mMap mapaV2
+	 * @return Cursor com todos os pontos que estiverem proximos ao centro do mapa
+	 */
+	/*public Cursor recuperarParadasDistancia(LatLng center) {
+		String query = "";
+		if(center == null){
+			 query = "SELECT *, (0) as distancia FROM %s"  ;
+		}else{
+			 query = "SELECT *, "
+					+ buildDistanceQuery(center.latitude, center.longitude)
+					+ " FROM %s order by distancia DESC"  ;// WHERE distancia > " + distanciaCentral;
+		}
+		query = String.format(query, "paradas");
+
+		return db.execSql_(query);
+	}
+	
+	
+	private String buildDistanceQuery(double latitude, double longitude) {
+		final double coslat = Math.cos(UtilPortoLeve.deg2rad(latitude));
+		final double sinlat = Math.sin(UtilPortoLeve.deg2rad(latitude));
+		final double coslng = Math.cos(UtilPortoLeve.deg2rad(longitude));
+		final double sinlng = Math.sin(UtilPortoLeve.deg2rad(longitude));
+		// @formatter:off
+		return "(" + coslat + "*" + CAMPO_TB_LATITUDE_COS + "*("
+				+ CAMPO_TB_LONGITUDE_COS + "*" + coslng + "+"
+				+ CAMPO_TB_LONGITUDE_SEN + "*" + sinlng + ")+" + sinlat + "*"
+				+ CAMPO_TB_LATITUDE_SEN + ") as distancia";
+		// @formatter:on
+	}
+	
+	//****************************** Fim Paradas *******************************************************
+	
+	
+	//****************************** Linha Onibus *******************************************************
+
+	
+	public void inserirLinhaOnibus(LinhaOnibus linhaOnibus) {
+
+		boolean resultado = true;
+
+		try {
+
+			ContentValues valoresIniciais = new ContentValues();
+			
+			valoresIniciais.put("codLinha",     linhaOnibus.getCodLinha()    );
+			valoresIniciais.put("numeroLinha",  linhaOnibus.getNomeLinha()   );
+			valoresIniciais.put("nomeLinha",    linhaOnibus.getNumeroLinha()   );
+			
+			db.inserir("linhaOnibus", valoresIniciais);
+			
+		} catch (Exception e) {
+			resultado = false;
+		}
+	}
+	
+	public void deleteLinhaOnibus(){
+		
+		try {
+			db.remover("linhaOnibus", null);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+	
+	//****************************** Fim Linha Onibus *****************************************************
+	*/
+}

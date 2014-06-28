@@ -1,0 +1,132 @@
+package mobi.rectour.recRestaurantes.entidades;
+
+import java.io.Serializable;
+import java.util.Iterator;
+
+import org.json.JSONObject;
+
+public class Restaurante implements Serializable {
+	
+	private static final long serialVersionUID = 1L;
+
+	int    rtID;
+	String rtNome;
+	String rtEndereco;
+	String rtTelefone;
+	String rtEspecialidade;
+	String rtSite;
+	String rtEmail;
+	
+	public Restaurante()
+	{
+		super();
+		
+		this.rtID            = 0;
+		this.rtNome          = "";
+		this.rtEndereco      = "";
+		this.rtTelefone      = "";
+		this.rtEspecialidade = "";
+		this.rtSite          = "";
+		this.rtEmail         = "";
+	}
+	
+	public Restaurante(JSONObject jsRestaurante){
+		
+		this();
+		Iterator<String> it = jsRestaurante.keys();
+		String keyReg = "";
+		Object valReg = "";
+
+		while (it.hasNext()) {
+			try {
+
+				keyReg = it.next();
+				valReg =  ( jsRestaurante.get(keyReg)  instanceof String) ?  
+													  (String)jsRestaurante.get(keyReg)  :
+													  (Integer) jsRestaurante.get(keyReg);
+
+				if (keyReg.equalsIgnoreCase("_id")) {
+					this.rtID = (Integer) valReg;
+					
+				} else if (keyReg.equalsIgnoreCase("nome")) {
+					this.rtNome = (String)valReg;
+					
+				} else if (keyReg.equalsIgnoreCase("endereco")) {
+					this.rtEndereco = (String) valReg;
+				} else if (keyReg.equalsIgnoreCase("telefone")) {
+					this.rtTelefone = (String) valReg;
+				} else if (keyReg.equalsIgnoreCase("especialidade")) {
+					this.rtEspecialidade = (String) valReg;
+				} else if (keyReg.equalsIgnoreCase("site")) {
+					this.rtSite = (String) valReg;
+				} else if (keyReg.equalsIgnoreCase("email")) {
+					this.rtEmail = (String) valReg;
+				} 
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+		
+		
+		
+	}
+	
+	
+
+	public int getRtID() {
+		return rtID;
+	}
+
+	public void setRtID(int rtID) {
+		this.rtID = rtID;
+	}
+
+	public String getRtNome() {
+		return rtNome;
+	}
+
+	public void setRtNome(String rtNome) {
+		this.rtNome = rtNome;
+	}
+
+	public String getRtEndereco() {
+		return rtEndereco;
+	}
+
+	public void setRtEndereco(String rtEndereco) {
+		this.rtEndereco = rtEndereco;
+	}
+
+	public String getRtTelefone() {
+		return rtTelefone;
+	}
+
+	public void setRtTelefone(String rtTelefone) {
+		this.rtTelefone = rtTelefone;
+	}
+
+	public String getRtEspecialidade() {
+		return rtEspecialidade;
+	}
+
+	public void setRtEspecialidade(String rtEspecialidade) {
+		this.rtEspecialidade = rtEspecialidade;
+	}
+
+	public String getRtSite() {
+		return rtSite;
+	}
+
+	public void setRtSite(String rtSite) {
+		this.rtSite = rtSite;
+	}
+
+	public String getRtEmail() {
+		return rtEmail;
+	}
+
+	public void setRtEmail(String rtEmail) {
+		this.rtEmail = rtEmail;
+	}
+
+}

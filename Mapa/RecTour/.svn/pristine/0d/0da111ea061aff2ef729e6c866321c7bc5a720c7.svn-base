@@ -1,0 +1,48 @@
+package mobi.rectour.util;
+
+import android.content.Context;
+import android.util.AttributeSet;
+import android.view.Display;
+import android.view.WindowManager;
+import android.widget.ListView;
+
+public class ListViewMOBC extends ListView {
+
+	public ListViewMOBC(Context context) {
+		super(context);
+		// TODO Auto-generated constructor stub
+	}
+
+	public ListViewMOBC(Context context, AttributeSet attrs) {
+		super(context, attrs);
+		// TODO Auto-generated constructor stub
+	}
+
+	public ListViewMOBC(Context context, AttributeSet attrs, int defStyle) {
+		super(context, attrs, defStyle);
+		// TODO Auto-generated constructor stub
+	}
+	
+	
+	@Override 
+	protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec){
+//	   int parentWidth = MeasureSpec.getSize(widthMeasureSpec);
+//	   int parentHeight = MeasureSpec.getSize(heightMeasureSpec);
+		
+		WindowManager wm = (WindowManager) this.getContext().getSystemService(Context.WINDOW_SERVICE);
+		Display display = wm.getDefaultDisplay();
+	   
+		int width = display.getWidth();  // deprecated
+		int height = display.getHeight();  // deprecated
+	
+	   
+	   this.setMeasuredDimension(width/2, heightMeasureSpec);
+	  // this.setLayoutParams(new .LayoutParams(parentWidth/2,parentHeight));
+	   
+	   
+	   super.onMeasure(width/2, heightMeasureSpec);
+	}
+	
+	
+
+}

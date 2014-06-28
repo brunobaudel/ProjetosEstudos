@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:orientation="vertical" >
+
+    <RelativeLayout
+        android:id="@+id/rl"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:layout_alignParentTop="true"
+        android:layout_weight="1.2" >
+
+        <ProgressBar
+            android:id="@+id/pbCarregando"
+            style="?android:attr/progressBarStyleSmall"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerVertical="true"
+            android:layout_marginLeft="10dp"
+            android:visibility="gone" />
+
+        <RadioGroup
+            android:id="@+id/rgMapaLista"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_alignParentRight="true"
+            android:layout_centerVertical="true"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:orientation="horizontal" >
+
+            <RadioButton
+                android:id="@+id/rbMapa"
+                android:layout_width="fill_parent"
+                android:layout_height="fill_parent"
+                android:layout_marginLeft="5dp"
+                android:layout_marginRight="5dp"
+                android:layout_weight="1"
+                android:button="@drawable/mapa_bt_mapa_selector"
+                android:checked="true"
+                android:tag="telaMapa"
+                android:text="Mapa" />
+
+            <RadioButton
+                android:id="@+id/rbLista"
+                android:layout_width="fill_parent"
+                android:layout_height="fill_parent"
+                android:layout_marginLeft="5dp"
+                android:layout_marginRight="5dp"
+                android:layout_weight="1"
+                android:button="@drawable/mapa_bt_lista_selector"
+                android:checked="false"
+                android:tag="telaLista"
+                android:text="Lista" />
+        </RadioGroup>
+    </RelativeLayout>
+
+    <RelativeLayout
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:layout_weight="0.1" >
+
+        <ViewFlipper
+            android:id="@+id/vf"
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent"
+            android:background="@color/Branco" >
+
+            <RelativeLayout
+                android:layout_width="fill_parent"
+                android:layout_height="fill_parent" >
+
+                <FrameLayout
+                    android:id="@+id/fl_map_spp"
+                    android:layout_width="fill_parent"
+                    android:layout_height="fill_parent" />
+            </RelativeLayout>
+
+            <ListView
+                android:id="@+id/lvRestaurante"
+                android:layout_width="fill_parent"
+                android:layout_height="fill_parent"
+                android:layout_marginLeft="2dp"
+                android:layout_marginRight="2dp"
+                android:layout_marginTop="2dp"
+                android:cacheColorHint="#ffff"
+                android:divider="@color/Branco"
+                android:dividerHeight="3dip" >
+            </ListView>
+        </ViewFlipper>
+
+        <View
+            android:id="@+id/imageView123"
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent"
+            android:background="@color/transparent" />
+
+        <include layout="@layout/menu_funcoes_mapa" />
+
+     </RelativeLayout>
+</LinearLayout>

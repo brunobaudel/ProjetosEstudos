@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/rlSplash"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:background="#CCC"
+    android:orientation="vertical" >
+
+    <RelativeLayout
+        android:id="@+id/rl"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:layout_alignParentTop="true"
+        android:layout_weight="0" >
+
+        <ProgressBar
+            android:id="@+id/pbCarregando"
+            style="?android:attr/progressBarStyleSmall"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerVertical="true"
+            android:layout_marginLeft="10dp"
+            android:visibility="gone" />
+
+        <RadioGroup
+            android:id="@+id/rgMapaLista"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_alignParentRight="true"
+            android:layout_centerVertical="true"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:orientation="horizontal" >
+
+            <RadioButton
+                android:id="@+id/rbMapa"
+                android:layout_width="fill_parent"
+                android:layout_height="fill_parent"
+                android:layout_marginLeft="5dp"
+                android:layout_marginRight="5dp"
+                android:layout_weight="1"
+                android:button="@null"
+                android:checked="true"
+                android:tag="telaMapa"
+                android:text="Fotos" />
+
+            <RadioButton
+                android:id="@+id/rbLista"
+                android:layout_width="fill_parent"
+                android:layout_height="fill_parent"
+                android:layout_marginLeft="5dp"
+                android:layout_marginRight="5dp"
+                android:layout_weight="1"
+                android:button="@null"
+                android:checked="false"
+                android:tag="telaLista"
+                android:text="Comentarios" />
+
+        </RadioGroup>
+    </RelativeLayout>
+
+    <ViewFlipper
+        android:id="@+id/vf"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:background="@color/Branco" >
+
+        <LinearLayout
+            android:id="@+main/llContainer"
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent"
+            android:layout_marginBottom="10dp"
+            android:layout_marginLeft="20dp"
+            android:layout_marginRight="20dp"
+            android:layout_marginTop="10dp"
+            android:background="@color/Branco"
+            android:orientation="vertical"
+            android:padding="10dp" >
+
+            <TextView
+                android:id="@+id/tvProcurarParadas"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:text="TextView" />
+
+            <android.support.v4.view.ViewPager
+                android:id="@+id/vpFotos"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content" >
+            </android.support.v4.view.ViewPager>
+        </LinearLayout>
+        
+        <ListView
+                android:id="@+id/lvComentariosFS"
+                android:layout_width="fill_parent"
+                android:layout_height="fill_parent"
+                android:layout_marginLeft="2dp"
+                android:layout_marginRight="2dp"
+                android:layout_marginTop="2dp"
+                android:cacheColorHint="#ffff"
+                android:divider="@color/Branco"
+                android:dividerHeight="3dip" >
+            </ListView>
+        
+    </ViewFlipper>
+
+</LinearLayout>

@@ -1,0 +1,108 @@
+package mobi.rectour.recRoteirosTurismoLazer.entidades;
+
+import java.io.Serializable;
+
+public class Museu implements Serializable {
+
+	private static final long serialVersionUID = 1L;
+	
+	int    rtID;
+	String rtNome;
+	String rtDescricao;
+	String rtBairro;
+	String rtLogradouro;
+	String rtTelefone;
+	String rtSite;
+	double rtLatitude;
+	double rtLongitude;
+
+	public Museu()
+	{
+		super();
+		
+		this.rtID                   = 0;
+		this.rtNome                 = "";
+		this.rtDescricao            = "";
+		this.rtBairro               = "";
+		this.rtLogradouro           = "";
+		this.rtTelefone             = "";
+		this.rtSite                 = "";
+		this.rtLatitude             = 0.000000;
+		this.rtLongitude            = 0.000000;
+	}
+
+	public int getRtID() {
+		return rtID;
+	}
+
+	public void setRtID(int rtID) {
+		this.rtID = rtID;
+	}
+
+	public String getRtNome() {
+		return rtNome;
+	}
+
+	public void setRtNome(String rtNome) {
+		this.rtNome = rtNome;
+	}
+
+	public String getRtDescricao() {
+		return rtDescricao;
+	}
+
+	public void setRtDescricao(String rtDescricao) {
+		this.rtDescricao = rtDescricao;
+	}
+
+	public String getRtBairro() {
+		return rtBairro;
+	}
+
+	public void setRtBairro(String rtBairro) {
+		this.rtBairro = rtBairro;
+	}
+
+	public String getRtLogradouro() {
+		return rtLogradouro;
+	}
+
+	public void setRtLogradouro(String rtLogradouro) {
+		this.rtLogradouro = rtLogradouro;
+	}
+
+	public String getRtTelefone() {
+		return rtTelefone;
+	}
+
+	public void setRtTelefone(String rtTelefone) {
+		this.rtTelefone = rtTelefone;
+	}
+
+	public String getRtSite() {
+		return rtSite;
+	}
+
+	public void setRtSite(String rtSite) {
+		this.rtSite = rtSite;
+	}
+
+	public double getRtLatitude() {
+		return rtLatitude;
+	}
+
+	public void setRtLatitude(double rtLatitude) {
+		this.rtLatitude = rtLatitude;
+	}
+
+	public double getRtLongitude() {
+		return rtLongitude;
+	}
+
+	public void setRtLongitude(double rtLongitude) {
+		this.rtLongitude = rtLongitude;
+	}
+	
+	
+	
+}

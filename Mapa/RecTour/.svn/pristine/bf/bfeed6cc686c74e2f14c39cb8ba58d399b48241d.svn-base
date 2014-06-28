@@ -1,0 +1,399 @@
+package mobi.rectour.bod;
+
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Iterator;
+import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CompletionService;
+import java.util.concurrent.ExecutorCompletionService;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+
+import mobi.rectour.bod.entidades.Atualizacao;
+import mobi.rectour.bod.bd.FactoryRepositorios;
+import mobi.rectour.bod.bd.IRepositorio;
+import mobi.rectour.bod.bd.TabelasBOD;
+import mobi.rectour.bod.entidades.P;
+import mobi.rectour.bod.repositorios.RepAtualizacao;
+import mobi.rectour.bod.repositorios.RepE_;
+
+import org.w3c.dom.Document;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+
+import android.content.Context;
+import android.util.Log;
+
+public class ParserArquivoToInsertBD {
+
+	// getResources().openRawResource(R.raw.insettbl_paradas)
+
+	private static IRepositorio repositorios;
+	private static IRepositorio repositorioAtualizacao;
+
+	public static void execParse(int res, Context c) {
+
+		try {
+			BufferedReader br = new BufferedReader(new InputStreamReader(c
+					.getResources().openRawResource(res)));
+			// efetua uma leitura linha a linha do arquivo a carrega
+			// a caixa de texto com a informação lida
+			StringBuilder total = new StringBuilder();
+			String line;
+			while ((line = br.readLine()) != null) {
+
+				String mydata = line;
+				Pattern pattern = Pattern.compile("'-[/d] . /d?'");
+				Matcher matcher = pattern.matcher(mydata);
+				if (matcher.find()) {
+					line = matcher.group(1);
+				}
+
+				total.append(line);
+			}
+
+			// Inserir bd
+			repositorios = FactoryRepositorios.createRepositorios(
+					RepE_.REPOSITORIO_PARADA, c);
+
+			String[] listaStrings = total.toString().split(";");
+
+			List<String> listInserts = new ArrayList<String>(
+					Arrays.asList(listaStrings));
+
+			for (String string : listInserts) {
+				repositorios.inserirItemSQL(string);
+			}
+
+		} catch (Exception e) {
+
+		}
+	}
+
+	private static ExecutorService tpes;
+	private static CompletionService<String> taskCompletionService;
+	private static int filaTasks , tasksFinalizadas = 0 ;
+
+	/*public static void execParseMutiTread(int res, Context c) {
+
+		try {
+			BufferedReader br = new BufferedReader(new InputStreamReader(c
+					.getResources().openRawResource(res)));
+			// efetua uma leitura linha a linha do arquivo a carrega
+			// a caixa de texto com a informação lida
+			StringBuilder total = new StringBuilder();
+			String line;
+			while ((line = br.readLine()) != null) {
+				total.append(line);
+			}
+
+			// Inserir bd
+			repositorios = FactoryRepositorios.createRepositorios(
+					RepParada.REPOSITORIO_PARADA, c);
+
+			String[] listaStrings = total.toString().split(";");
+
+			List<String> listInserts = new ArrayList<String>(
+					Arrays.asList(listaStrings));
+
+			int j = 500;
+
+			tpes = Executors.newFixedThreadPool(20);
+
+			List<String> enviar = new ArrayList<String>();
+
+			for (int i = 0; i < listInserts.size(); i++) {
+
+				enviar.add(listInserts.get(i));
+				if (enviar.size() > j - 1) {
+					inserirIterator(enviar.iterator(),1);
+					enviar = new ArrayList<String>();
+					filaTasks++;
+					
+				}
+			}
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+*/
+	
+	public static void execParseMutiTreadXML(int res, Context c) {
+
+		try {
+			// BufferedReader br = new BufferedReader(new InputStreamReader());
+
+			//Runtime.getRuntime().exec("grep ");
+			
+			DocumentBuilderFactory factory = DocumentBuilderFactory
+					.newInstance();
+			DocumentBuilder builder;
+			builder = factory.newDocumentBuilder();
+			Document document = builder.parse(c.getResources().openRawResource(
+					res));
+			NodeList tagsRegistro = document.getElementsByTagName("registros");
+
+			Node nodeEvt = tagsRegistro.item(0);
+			ArrayList<Node> nodesRegistros = getNodes(nodeEvt, "registro");
+
+			repositorios =  FactoryRepositorios.createRepositorios(
+					RepE_.REPOSITORIO_PARADA, c);
+			
+			
+			repositorioAtualizacao = FactoryRepositorios.createRepositorios(RepAtualizacao.REPOSITORIO_ATUALIZACAO, c);
+
+			int j = 300;
+
+			tpes = Executors.newFixedThreadPool(20);
+			taskCompletionService = new ExecutorCompletionService<String>(tpes);
+			
+			List<P> enviar = new ArrayList<P>();
+			
+			for (Node node : nodesRegistros) {
+
+				String teste1 = getAttributeValue(node, "campo1");
+				String teste2 = getAttributeValue(node, "campo2");
+				String teste3 = getAttributeValue(node, "campo3");
+				String teste4 = getAttributeValue(node, "campo4");
+				String teste5 = getAttributeValue(node, "campo5");
+				String teste6 = getAttributeValue(node, "campo6");
+
+				P p = new P(teste1, teste2, teste3, teste4, teste5,teste6);
+
+				enviar.add(p);
+				if (enviar.size() > j - 1) {
+					inserirIteratorParada(enviar.iterator(),2);
+					enviar = new ArrayList<P>();
+					filaTasks++;
+				}
+			}
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	private static void inserirIteratorParada(Iterator<P> itInsert,int tipo) {
+
+		//tpes.execute(new ThreadGravarInformacoes(itInsert));
+		switch (tipo) {
+		case 1:
+			tpes.execute(new ThreadGravarInformacoes(itInsert));
+			break;
+		case 2:
+			CallableGravarInformacoes call = new CallableGravarInformacoes(itInsert);
+			
+			taskCompletionService.submit(call);
+			break;
+
+		default:
+			break;
+		}
+	
+	}
+
+	private static class ThreadGravarInformacoes extends Thread {
+
+		private Iterator<P> itTreadInsert;
+
+		public ThreadGravarInformacoes(Iterator<P> it) {
+
+			this.itTreadInsert = it;
+		}
+
+		@Override
+		public void run() {
+
+			while (itTreadInsert.hasNext()) {
+				repositorios.inserir(itTreadInsert.next());
+
+			}
+			
+		}
+	}
+
+	private static void inserirIterator(Iterator<String> itInsert, int tipo) {
+
+			switch (tipo) {
+			case 1:
+				tpes.execute(new ThreadGravarInformacoesString(itInsert));
+				break;
+			case 2:
+				taskCompletionService.submit(new CallableGravarInformacoesString(itInsert));
+				break;
+
+			default:
+				break;
+			}
+		}
+		
+	private static class ThreadGravarInformacoesString extends Thread {
+
+			private Iterator<String> itTreadInsert;
+
+			public ThreadGravarInformacoesString(Iterator<String> it) {
+
+				this.itTreadInsert = it;
+			}
+
+			@Override
+			public void run() {
+
+				while (itTreadInsert.hasNext()) {
+					repositorios.inserirItemSQL(itTreadInsert.next());
+
+				}
+				
+			}
+		}
+		
+	private static class CallableGravarInformacoesString implements Callable<String> {
+
+			private Iterator<String> itTreadInsert;
+
+			public CallableGravarInformacoesString(Iterator<String> it) {
+
+				this.itTreadInsert = it;
+			}
+
+			@Override
+			public String call() throws Exception {
+				while (itTreadInsert.hasNext()) {
+					repositorios.inserirItemSQL(itTreadInsert.next());
+				}
+				
+				tasksFinalizadas++;
+				
+				Log.d("BOD", "Completa tarefa :" + tasksFinalizadas + " de " +  (filaTasks - tasksFinalizadas));
+				
+				return "completo";
+			}
+		}
+		
+	private static class CallableGravarInformacoes implements Callable<String> {
+
+		private Iterator<P> itTreadInsert;
+		private int IdTask;
+
+		public CallableGravarInformacoes(Iterator<P> it) {
+
+			this.itTreadInsert = it;
+		}
+
+		@Override
+		public String call() throws Exception {
+			while (itTreadInsert.hasNext()) {
+				repositorios.inserir(itTreadInsert.next());
+			}
+			
+			//Log.d("BOD", "Faltam " + filaTasks-- + " de " +  filaTasks);
+			filaTasks--;
+			
+			if(filaTasks == 0){
+				
+				Calendar c = Calendar.getInstance();
+				
+				Atualizacao at = new Atualizacao();
+				at.setDataUltimaAtualizacao(String.valueOf( c.getTimeInMillis()));
+				at.setDeterminarAtualizacao("N");
+				at.setNome_tabela(TabelasBOD.TBL_Paradas);
+				
+				repositorioAtualizacao.inserir(at); 
+			
+			}
+			
+			return "completo" ;
+		}
+
+		
+		
+//		public void testeFuture(){
+//			for (int t = 0, n = filaTasks; t < n; t++) {
+//                Future<String> f;
+//				try {
+//					f = taskCompletionService.take();
+//					String imageData = f.get();
+//					Log.d("BOD", "Tarefa completa :" +imageData );
+//				} catch (Exception e) {
+//					// TODO Auto-generated catch block
+//					e.printStackTrace();
+//				}
+//            }
+//		}
+		
+		
+	}
+	
+		public static String getText(Node node) {
+			String text = null;
+			if (node != null) {
+				text = node.getLocalName();
+			}
+			return text;
+		}
+
+		public static String getAttributeValue(Node node, String attribute) {
+			String value = null;
+			if (node != null && attribute != null) {
+				NamedNodeMap attrs = node.getAttributes();
+				if (attrs != null) {
+					Node attr = attrs.getNamedItem(attribute);
+					if (attr != null) {
+						value = attr.getNodeValue();
+					}
+				}
+			}
+			return value;
+		}
+
+		public static String nodeList() {
+
+			return null;
+		}
+
+		public static ArrayList<Node> getNodes(Node node, String name) {
+			ArrayList<Node> nodes = new ArrayList<Node>();
+
+			if (node != null && name != null) {
+				NodeList nodeList = node.getChildNodes();
+				int length = nodeList.getLength();
+				for (int i = 0; i < length; i++) {
+					Node subnode = nodeList.item(i);
+					if (subnode.getNodeName().equalsIgnoreCase(name)) {
+						nodes.add(subnode);
+					}
+				}
+			}
+
+			return nodes;
+		}
+
+		public static Node getNode(Node node, String name) {
+			Node subnode = null;
+
+			if (node != null && name != null) {
+				ArrayList<Node> nodes = getNodes(node, name);
+				if (nodes.size() > 0) {
+					subnode = nodes.get(0);
+				}
+			}
+
+			return subnode;
+		}
+
+		
+		
+
+	
+}

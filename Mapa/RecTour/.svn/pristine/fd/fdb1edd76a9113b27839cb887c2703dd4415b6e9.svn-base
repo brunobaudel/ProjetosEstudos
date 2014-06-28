@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:background="@color/Branco"
+    android:orientation="vertical" >
+
+     <Button
+         android:id="@+id/btVoltar"
+         android:layout_width="wrap_content"
+         android:layout_height="wrap_content"
+         android:layout_marginLeft="10dp"
+         android:layout_marginTop="10dp"
+         android:text="Voltar"
+         android:textSize="16sp"
+         android:visibility="gone" />
+
+     <TextView
+         android:id="@+id/tvTiluto"
+         android:layout_width="fill_parent"
+         android:layout_height="wrap_content"
+         android:layout_margin="20dp"
+         android:text="Encontrei as seguintes opções de informações para o local!\nSelecione um para obter mais detalhes."
+         android:textSize="18sp" />
+
+     <ImageView
+         android:id="@+id/imageView2"
+         android:layout_width="fill_parent"
+         android:layout_height="wrap_content"
+         android:layout_gravity="right"
+         android:src="@drawable/anin_direita" />
+
+     <ImageView
+         android:id="@+id/imageView1"
+         android:layout_width="fill_parent"
+         android:layout_height="wrap_content"
+          />
+
+     <ListView
+         android:id="@+id/lvListagem"
+         android:layout_width="fill_parent"
+         android:layout_height="fill_parent"
+         android:layout_margin="5dp"
+         android:cacheColorHint="@color/Branco"
+         android:divider="@drawable/linha_cinza" >
+
+     </ListView>
+
+</LinearLayout>

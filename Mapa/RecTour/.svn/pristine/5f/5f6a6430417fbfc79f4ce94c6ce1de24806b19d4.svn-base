@@ -1,0 +1,373 @@
+package mobi.rectour.recRoteirosTurismoLazer.gui.ponte;
+
+import mobi.rectour.R;
+import mobi.rectour.atualizacoesremotas.AtualizarDadosApp;
+import mobi.rectour.atualizacoesremotas.AtualizarDadosApp.CallBackAtualizacoesProntas;
+import mobi.rectour.atualizacoesremotas.AtualizarDadosApp.IatualizarPontes;
+import mobi.rectour.geral.RecTourDatabase;
+import mobi.rectour.mapa.funcoes.FuncoesMenu;
+import mobi.rectour.mapa.funcoes.FuncoesMenu.IFuncoesMenu;
+import mobi.rectour.mapa.funcoes.v2.funcMyLocation.BuscarLocalizacaoAtualV2;
+import mobi.rectour.mapa.funcoes.v2.funcMyLocation.BuscarLocalizacaoAtualV2.ICallBackMinhaLocalizacao;
+import mobi.rectour.mapa.funcoes.v2.funcTracarRotas.AutomatoBuscarRota;
+import mobi.rectour.mapa.funcoes.v2.funcTracarRotas.Route;
+import mobi.rectour.mapa.funcoes.v2.funcTracarRotas.TracarRotasV2;
+import mobi.rectour.mapa.funcoes.v2.plotarpontos.PlotarPontosV2;
+import mobi.rectour.mapa.funcoes.v2.plotarpontos.PlotarPontosV2.IConstruirPontos;
+import mobi.rectour.recHoteis.gui.HotelMapFr;
+import mobi.rectour.recHoteis.gui.HotelMarker;
+import mobi.rectour.util.ProgressDialogRecTour;
+import mobi.rectour.util.SupportMapFragmentRecTour;
+import mobi.rectour.util.SupportMapFragmentRecTour.OnGoogleMapFragmentListener;
+import mobi.rectour.web.InformacoesServidor;
+import android.app.Activity;
+import android.database.Cursor;
+import android.os.Bundle;
+import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentTransaction;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.View.OnClickListener;
+import android.view.ViewGroup;
+import android.widget.AdapterView;
+import android.widget.AdapterView.OnItemClickListener;
+import android.widget.Button;
+import android.widget.LinearLayout;
+import android.widget.ListView;
+import android.widget.ProgressBar;
+import android.widget.RadioButton;
+import android.widget.RadioGroup;
+import android.widget.TextView;
+import android.widget.ViewFlipper;
+
+import com.google.android.gms.maps.CameraUpdateFactory;
+import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.GoogleMap.CancelableCallback;
+import com.google.android.gms.maps.GoogleMap.OnMapClickListener;
+import com.google.android.gms.maps.GoogleMap.OnMarkerClickListener;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
+import com.google.android.gms.maps.model.CameraPosition;
+import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
+import com.google.android.gms.maps.model.MarkerOptions;
+
+public class PonteMapFr extends Fragment implements OnClickListener,
+		OnItemClickListener, RadioGroup.OnCheckedChangeListener,
+		IatualizarPontes, ICallBackMinhaLocalizacao,
+		CallBackAtualizacoesProntas, OnGoogleMapFragmentListener,
+		OnMarkerClickListener {
+
+	public static String PKG_Mapa_Ponte = "mobi.rectour.recRoteirosTurismoLazer.gui.ponte.PonteMapFr";
+
+	// Mapa
+	private GoogleMap mMap;
+	private FragmentTransaction tx;
+	private SupportMapFragmentRecTour sMf;
+
+	private LayoutInflater layoutInf;
+
+	// Lista Vagas
+	private PonteListaADPT cAdptListaVagas;
+	private ListView lvPontes;
+
+	// Fliper
+	private ViewFlipper mFlipper;
+	private static final int STATE_MAP = 0;
+	private static final int STATE_LIST = 1;
+	private int mState;
+
+	// Funções do menu
+	FuncoesMenu fmPlotarPontos;
+	FuncoesMenu fmTracarRotas;
+
+	RadioButton rb;
+
+	// Progress Bar Carregamento
+	private ProgressBar carregando;
+	private ProgressDialogRecTour progressRecTour;
+
+	// Marker minha localizacao
+	private Marker myLocation;
+	private Marker markerDestino;
+
+	private LinearLayout llMenu;
+	
+	public PonteMapFr() {
+	}
+
+	@Override
+	public void onAttach(Activity activity) {
+		super.onAttach(activity);
+
+		tx = getActivity().getSupportFragmentManager().beginTransaction();
+
+		sMf = SupportMapFragmentRecTour.newInstance();
+		sMf.setmCallback(this);
+
+		tx.replace(R.id.fl_map_ponte, sMf, "Mapa_");
+
+		tx.commit();
+
+		// Set callback atualização
+		AtualizarDadosApp.iAtualizarPontes = this;
+	}
+
+	@Override
+	public void onDestroy() {
+		super.onDestroy();
+		BuscarLocalizacaoAtualV2.icallMinhaLocalizacao = null;
+		removerFR("Mapa_Ponte");
+	}
+	
+	private boolean removerFR(String tagFragment) {
+
+		boolean voltar = false;
+		Fragment fragment = (getFragmentManager().findFragmentByTag(tagFragment));
+
+		if (fragment != null) {
+			FragmentTransaction ft = getActivity().getSupportFragmentManager().beginTransaction();
+			ft.remove(fragment);
+			ft.commit();
+			voltar = true;
+		}
+		return voltar;
+	}
+	
+	
+	IConstruirPontos pontosPontes = new IConstruirPontos() {
+
+		@Override
+		public MarkerOptions getMarkeOptions(LatLng local, Cursor cursor) {
+
+			String _id = cursor.getString(cursor.getColumnIndex("_id"));
+
+			return new MarkerOptions()
+					.position(local)
+					.snippet(_id)
+					.icon(BitmapDescriptorFactory
+							.fromResource(R.drawable.marker_pontes));
+		}
+	};
+
+	@Override
+	public View onCreateView(LayoutInflater inflater, ViewGroup container,
+			Bundle savedInstanceState) {
+
+		View view = inflater.inflate(R.layout.ponte_mapa, container, false);
+
+		// Set views
+		mFlipper = (ViewFlipper) view.findViewById(R.id.vf);
+		((RadioGroup) view.findViewById(R.id.rgMapaLista))
+				.setOnCheckedChangeListener(this);
+		((TextView) view.findViewById(R.id.tvTitulo)).setText("Pontes");
+		((Button)view.findViewById(R.id.btTracarRotas)).setOnClickListener(this);
+
+		progressRecTour = new ProgressDialogRecTour(getActivity());
+
+		// Set Inflater
+		setLayoutInf(inflater);
+
+		// Set progressBar
+		carregando = (ProgressBar) view.findViewById(R.id.pbCarregando);
+
+		rb = (RadioButton) view.findViewById(R.id.rbMapa);
+
+		// Set callback atualização
+		//AtualizarDadosApp.iAtualizarPontes = this;
+		//lvRestaurantes = (ListView) view.findViewById(R.id.lvRestaurante);
+
+		lvPontes = (ListView) view.findViewById(R.id.lvRestaurante);
+		llMenu   = (LinearLayout) view.findViewById(R.id.llMenu);
+
+		return view;
+	}
+
+	CancelableCallback callback = new CancelableCallback() {
+
+		@Override
+		public void onFinish() {
+			// TODO Auto-generated method stub
+			if (!AtualizarDadosApp.atualizandoPonte) {
+
+				Cursor cPontes = RecTourDatabase
+						.recuperarPontesDistancia(BuscarLocalizacaoAtualV2
+								.getLocalizacao());
+
+				IFuncoesMenu iFuncoesMenuPlotarPontos = new PlotarPontosV2(
+						cPontes, getActivity());
+				fmPlotarPontos = new FuncoesMenu(iFuncoesMenuPlotarPontos);
+				((PlotarPontosV2) fmPlotarPontos.getFuncoesMenu())
+						.setIConstruirPontos(pontosPontes);
+				fmPlotarPontos.executarFuncao(mMap);
+
+				cAdptListaVagas = new PonteListaADPT(getActivity(), cPontes);
+				lvPontes.setAdapter(cAdptListaVagas);
+				lvPontes.setOnItemClickListener(PonteMapFr.this);
+
+				// Set callback update localizacao
+				BuscarLocalizacaoAtualV2.icallMinhaLocalizacao = PonteMapFr.this;
+
+			}
+		}
+
+		@Override
+		public void onCancel() {
+
+		}
+	};
+
+	private void setUpMap() {
+		// Hide the zoom controls as the button panel will cover it.
+		mMap.getUiSettings().setZoomControlsEnabled(false);
+
+		LatLng setLatLog = BuscarLocalizacaoAtualV2.getLocalizacao();
+
+		CameraPosition minhaLocalizacao = new CameraPosition.Builder()
+				.target(setLatLog).zoom(16.0f).build();
+		MarkerOptions mo = new MarkerOptions()
+				.position(setLatLog)
+				.snippet("")
+				.visible(true)
+				.icon(BitmapDescriptorFactory
+						.fromResource(R.drawable.icon_my_location));
+
+		myLocation = mMap.addMarker(mo);
+
+		mMap.animateCamera(
+				CameraUpdateFactory.newCameraPosition(minhaLocalizacao), 10,
+				callback);
+		mMap.setInfoWindowAdapter(new PonteMaker(getLayoutInf()));
+		
+		mMap.setOnMarkerClickListener(this);
+		mMap.setOnMapClickListener(onMapClick);
+		
+
+		if (!AtualizarDadosApp.atualizandoPonte) {// Se estiver atualizando as rotas ele n entra
+			carregando.setVisibility(View.INVISIBLE);
+		}
+	}
+	
+	OnMapClickListener onMapClick = new OnMapClickListener(){
+		@Override
+		public void onMapClick(LatLng point) {
+			llMenu.setVisibility(View.INVISIBLE);
+		}
+	};
+	
+	@Override
+	public boolean onMarkerClick(Marker marker) {
+		CameraPosition posicaoCameraClicada = new CameraPosition.Builder().target(marker.getPosition()).zoom(19.0f).build();
+		mMap.animateCamera(CameraUpdateFactory.newCameraPosition(posicaoCameraClicada),600, null);
+		marker.showInfoWindow();
+		llMenu.setVisibility(View.VISIBLE);
+		markerDestino = marker;
+		
+		return true;
+	}
+	
+	
+
+	@Override
+	public void onClick(View v) {
+		if(markerDestino != null){
+			LatLng minhaLocalizacao = myLocation.getPosition();
+			
+			CameraPosition posicaoCameraClicada = new CameraPosition.Builder().target(minhaLocalizacao).zoom(19.0f).build();
+			mMap.animateCamera(CameraUpdateFactory.newCameraPosition(posicaoCameraClicada),500, null);
+
+			progressRecTour.show();
+			
+			AutomatoBuscarRota abr = new AutomatoBuscarRota( minhaLocalizacao, markerDestino.getPosition());
+			abr.setCbap(PonteMapFr.this);
+			abr.executar();
+		}
+	}
+
+	@Override
+	public void operacaoConcluida(int codigoAutomato, InformacoesServidor erro) {
+		
+		TracarRotasV2 trV2 = new TracarRotasV2((Route) erro.getRetorno());
+		trV2.execute(mMap);
+		progressRecTour.dismiss();
+	}
+	
+	
+	public LayoutInflater getLayoutInf() {
+		return layoutInf;
+	}
+
+	public void setLayoutInf(LayoutInflater layoutInf) {
+		this.layoutInf = layoutInf;
+	}
+
+	@Override
+	public void onItemClick(AdapterView<?> arg0, View arg1, int arg2, long arg3) {
+		rb.setChecked(true);
+		mFlipper.setDisplayedChild(STATE_MAP);
+		mState = STATE_MAP;
+
+		CameraPosition posicaoCameraClicada = new CameraPosition.Builder().target((LatLng) arg1.getTag()).zoom(19.0f).build();
+		mMap.animateCamera(CameraUpdateFactory.newCameraPosition(posicaoCameraClicada), 1000, null);
+	}
+
+	@Override
+	public void onCheckedChanged(RadioGroup group, int checkedId) {
+		switch (checkedId) {
+		case R.id.rbMapa:
+
+			if (mState == STATE_MAP) {
+				return;
+			}
+
+			mFlipper.setDisplayedChild(STATE_MAP);
+			mState = STATE_MAP;
+
+			break;
+		case R.id.rbLista:
+			if (mState == STATE_LIST) {
+				return;
+			}
+
+			mFlipper.setDisplayedChild(STATE_LIST);
+			mState = STATE_LIST;
+
+			break;
+		default:
+			break;
+		}
+
+	}
+
+	public void iniciarProcesso() {
+		carregando.setVisibility(View.VISIBLE);
+
+	}
+
+	public void pararProgress(boolean erro) {
+		fmPlotarPontos.cancelarFuncao(1);
+		fmPlotarPontos.executarFuncao(mMap);
+		carregando.setVisibility(View.INVISIBLE);
+	}
+
+	@Override
+	public void onPause() {
+		super.onPause();
+	}
+
+	@Override
+	public void plotarPontes() {
+	}
+
+	@Override
+	public void upDateLocalizacao(LatLng localizacaoAtual) {
+		myLocation.setPosition(localizacaoAtual);
+	}
+
+	@Override
+	public void onMapReady(GoogleMap map) {
+		mMap = map;
+		setUpMap();
+
+	}
+
+}

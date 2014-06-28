@@ -1,0 +1,464 @@
+package mobi.rectour.atualizacoesremotas;
+
+import java.util.Calendar;
+
+import mobi.rectour.atualizacoesremotas.entidade.Atualizacao;
+import mobi.rectour.geral.RecTourDatabase;
+import mobi.rectour.recHoteis.automato.AutomatoBuscarHoteis;
+import mobi.rectour.recRestaurantes.automato.AutomatoBuscarRestaurante;
+import mobi.rectour.recRoteirosTurismoLazer.automato.AutomatoBuscarCentrosCompras;
+import mobi.rectour.recRoteirosTurismoLazer.automato.AutomatoBuscarMuseus;
+import mobi.rectour.recRoteirosTurismoLazer.automato.AutomatoBuscarPontesRecife;
+import mobi.rectour.recRoteirosTurismoLazer.automato.AutomatoBuscarTeatros;
+import mobi.rectour.web.InformacoesServidor;
+import android.content.Context;
+import android.database.Cursor;
+
+public class AtualizarDadosApp {
+	
+    public interface CallBackAtualizacoesProntas{
+		
+		void operacaoConcluida(int codigoAutomato,InformacoesServidor erro );
+	}
+    
+    
+    private static final String statusDeterminarAtualizacaoSim = "S";
+    private static final String statusDeterminarAtualizacaoNao = "N";
+	
+	//Automato Kml Ruas
+	private AutomatoBuscarRestaurante    automatoRecuperarRestaurante;
+	private AutomatoBuscarHoteis   	     automatoRecuperarHotel;
+	private AutomatoBuscarMuseus         automatoRecuperarMuseu;
+	private AutomatoBuscarCentrosCompras automatoRecuperarShopping;
+	private AutomatoBuscarTeatros        automatoRecuperarTeatro;
+	private AutomatoBuscarPontesRecife   automatoRecuperarPonte;
+	
+	private Context context;
+	
+	//private Calendar c = Calendar.getInstance(); 
+	
+	long tempoParaExpirar = 60000l * 6000; //  60 minute tempo para atualizar as tabelas 1h
+	
+	//
+	public static boolean atualizandoRestaurante;
+	public static boolean atualizandoHotel;
+	public static boolean atualizandoMuseu;
+	public static boolean atualizandoShopping;
+	public static boolean atualizandoTeatro;
+	public static boolean atualizandoPonte;
+	
+	//****************************Quando o automato acabar com a atualizacao ele notifica a tela para *******************************
+	
+	public interface  INotificarAtualizacoesFinalizadas{
+		void notificar(int idAutomato);
+	}
+	public static INotificarAtualizacoesFinalizadas iAtualizacoesFinalizadas;
+	
+	
+	/**
+	 * Atualiza a tela das dos Restaurantes 
+	 * @author Bruno
+	 *
+	*/
+	public interface  IatualizarRestaurantes{
+		void plotarRestaurantes();
+	}
+	
+	public static IatualizarRestaurantes iAtualizarRestaurantes;
+	
+
+	public interface  IatualizarHoteis{
+		void plotarHoteis();
+	}
+	
+	public static IatualizarHoteis iAtualizarHoteis;
+	
+	
+	public interface IatualizarMuseus{
+		void plotarMuseus();
+	}
+	
+	public static IatualizarMuseus iAtualizarMuseus;
+	
+	
+	public interface IatualizarShoppings{
+		void plotarShoppings();
+	}
+	
+	public static IatualizarShoppings iAtualizarShoppings;
+	
+	
+	public interface IatualizarTeatros{
+		void plotarTeatros();
+	}
+
+	public static IatualizarTeatros iAtualizarTeatros;
+
+
+	public interface IatualizarPontes{
+		void plotarPontes();
+	}
+
+	public static IatualizarPontes iAtualizarPontes;
+	
+	//******************************************************************************************
+	 
+	CallBackAtualizacoesProntas cbap = new CallBackAtualizacoesProntas() {
+		
+		@Override
+		public void operacaoConcluida(int codigoAutomato, InformacoesServidor infServer) {
+			
+			atualizarTabelas(codigoAutomato,infServer);
+		}
+	};
+	
+	public AtualizarDadosApp(Context context) {
+		
+		this.context = context;
+		
+		//inicia todos os automatos
+		 initAutomatos();
+		 //verifica as tabelas que serão atualizadas
+		 //verificarStatusAtualizacaoTabelas();
+	}
+	
+	
+	public InformacoesServidor msgUsuarioTabelasaSeremAtualizadas()	{
+		
+		InformacoesServidor is = new InformacoesServidor();
+		
+		StringBuilder msgUsuario = new StringBuilder( "Vou atualizar as informações de ");
+		
+		Atualizacao aRestaurantes    = (Atualizacao) RecTourDatabase.recuperarItemAtualizacao("restaurante");
+		boolean atualizarRestaurante =  aRestaurantes.getDeterminarAtualizacao().equals("S")|| atualizarTempos(aRestaurantes.getDataUltimaAtualizacao());//Vai verificar se a atualizacao vai ser processada ou n 
+		if(atualizarRestaurante){
+			msgUsuario.append(aRestaurantes.getNome_tabela());
+		}
+		
+		Atualizacao aHotel        = (Atualizacao) RecTourDatabase.recuperarItemAtualizacao("hotel");
+		boolean atualizarHotel    =  aHotel.getDeterminarAtualizacao().equals("S")|| atualizarTempos(aHotel.getDataUltimaAtualizacao());//Vai verificar se a atualizacao vai ser processada ou n
+		if(atualizarHotel){
+			msgUsuario.append(", " + aHotel.getNome_tabela());
+		}
+		
+		
+		Atualizacao aMuseu        = (Atualizacao) RecTourDatabase.recuperarItemAtualizacao("museu");
+		boolean atualizarMuseu    = aMuseu.getDeterminarAtualizacao().equals("S") || atualizarTempos(aMuseu.getDataUltimaAtualizacao());
+		if(atualizarMuseu){
+			msgUsuario.append(", " +aMuseu.getNome_tabela());
+		}
+		
+		
+		Atualizacao aShopping     = (Atualizacao) RecTourDatabase.recuperarItemAtualizacao("shopping");
+		boolean atualizarShopping = aShopping.getDeterminarAtualizacao().equals("S") || atualizarTempos(aShopping.getDataUltimaAtualizacao());
+		if(atualizarShopping){
+			msgUsuario.append(", " +aShopping.getNome_tabela());
+		}
+		
+		Atualizacao aTeatro       = (Atualizacao) RecTourDatabase.recuperarItemAtualizacao("teatro");
+		boolean atualizarTeatro   = aTeatro.getDeterminarAtualizacao().equals("S") || atualizarTempos(aTeatro.getDataUltimaAtualizacao());
+		if(atualizarTeatro){
+			msgUsuario.append(", " +aTeatro.getNome_tabela());
+		}
+		
+		Atualizacao aPonte        = (Atualizacao) RecTourDatabase.recuperarItemAtualizacao("ponte");
+		boolean atualizarPonte    = aPonte.getDeterminarAtualizacao().equals("S") || atualizarTempos(aPonte.getDataUltimaAtualizacao());
+		if(atualizarPonte){
+			msgUsuario.append(", " +aPonte.getNome_tabela());
+		}
+		
+		//Verifica se existe alguma tabela a ser atualizada
+		boolean atualizacao = atualizarRestaurante || atualizarHotel || atualizarMuseu || atualizarShopping || atualizarTeatro || atualizarPonte;
+		
+		
+		if(atualizacao){
+			is.setMsgUsuario(msgUsuario.toString());
+			is.setTituloMsgUsuario("Atualizar dados aplicativo");
+			is.setFalhaRequisicao(true);
+			verificarStatusAtualizacaoTabelas();
+			
+		}else{
+			is.setFalhaRequisicao(false);
+		}
+		
+		return is;
+	}
+	
+	
+	public void atualizarRestaurante(){
+		
+		if(atualizandoRestaurante){
+			automatoRecuperarRestaurante.setCbap(cbap);
+			automatoRecuperarRestaurante.executar(context);
+		}
+	}
+	
+	
+	public void atualizarHotel(){
+		
+		if(atualizandoHotel){
+			automatoRecuperarHotel.setCbap(cbap);  
+			automatoRecuperarHotel.executar();
+		}
+	}
+	
+	public void atualizarMuseu(){
+		if( atualizandoMuseu){
+			automatoRecuperarMuseu.setCbap(cbap);
+			automatoRecuperarMuseu.executar();
+		}
+	}
+	
+	public void atualizarShoppings(){
+		if( atualizandoShopping ){
+			automatoRecuperarShopping.setCbap(cbap);
+			automatoRecuperarShopping.executar();
+		}
+	}
+	
+	public void atualizarTeatros(){
+		if( atualizandoTeatro ){
+			automatoRecuperarTeatro.setCbap(cbap);
+			automatoRecuperarTeatro.executar();
+		}
+	}
+
+	public void atualizarPontes(){
+		if( atualizandoPonte ){
+			automatoRecuperarPonte.setCbap(cbap);
+			automatoRecuperarPonte.executar();
+		}
+	}
+	
+	public void escolherAutomatoAtualizar(String nomeAutomato){
+		
+		 if(AutomatoBuscarHoteis.nomeTabelaHoteis.equals(nomeAutomato)){
+			atualizandoHotel = true;
+			atualizarHotel();
+		}else if("museu".equals(nomeAutomato)){
+			atualizandoMuseu = true;
+			atualizarMuseu();
+		}else if("shopping".equals(nomeAutomato)){
+			atualizandoShopping = true;
+			atualizarShoppings();
+		}else if("teatro".equals(nomeAutomato)){
+			atualizandoTeatro = true;
+			atualizarTeatros();
+		}else if("teatro".equals(nomeAutomato)){
+			atualizandoTeatro = true;
+			atualizarTeatros();
+		}else if("restaurante".equals(nomeAutomato)){
+			atualizandoRestaurante = true;
+			atualizarRestaurante();
+		}
+		
+		
+	}
+	
+	
+
+	private void atualizarTabelas(int codigoAutomato, InformacoesServidor infoServer){ 
+		
+		Atualizacao at = new Atualizacao();
+		Calendar c = Calendar.getInstance();
+		switch (codigoAutomato) {
+		case AutomatoBuscarRestaurante.idRestaurante:
+			
+			String atualizarRestaurante = infoServer.isFalhaRequisicao() ? statusDeterminarAtualizacaoSim : statusDeterminarAtualizacaoNao;
+			
+			at.setDeterminarAtualizacao(atualizarRestaurante);//
+			at.setDataUltimaAtualizacao(String.valueOf( c.getTimeInMillis()));
+			at.setNome_tabela("restaurante");
+			at.setDescricaoLogDev(infoServer.getMsgErroServer());
+			at.setDescricaoLogUsuario(infoServer.getMsgUsuario());
+			
+			RecTourDatabase.inserirAtualizacao(at); 
+			
+			atualizandoRestaurante = false;
+			
+			
+			if(iAtualizarRestaurantes != null){
+				iAtualizarRestaurantes.plotarRestaurantes();
+			}
+			
+			if(iAtualizacoesFinalizadas != null){
+				iAtualizacoesFinalizadas.notificar(automatoRecuperarRestaurante.idRestaurante);
+			}
+			
+			break;
+		
+		case AutomatoBuscarHoteis.idHotel:
+			//Quando o erro e false e pq deu erro.
+			String atualizarHoteis = infoServer.isFalhaRequisicao() ? statusDeterminarAtualizacaoSim : statusDeterminarAtualizacaoNao;
+			
+			at.setDeterminarAtualizacao(atualizarHoteis);//
+			at.setDataUltimaAtualizacao(String.valueOf( c.getTimeInMillis()));
+			
+			at.setNome_tabela(AutomatoBuscarHoteis.nomeTabelaHoteis);
+			at.setDescricaoLogDev(infoServer.getMsgErroServer());
+			at.setDescricaoLogUsuario(infoServer.getMsgUsuario());
+			
+			
+			RecTourDatabase.inserirAtualizacao(at); 
+			
+			atualizandoHotel = false;
+			if(iAtualizarHoteis != null){
+				iAtualizarHoteis.plotarHoteis();
+			}
+			
+			if(iAtualizacoesFinalizadas != null){
+				iAtualizacoesFinalizadas.notificar(automatoRecuperarHotel.idHotel);
+			}
+			
+			break;
+			
+		case AutomatoBuscarMuseus.idMuseu:
+			
+			String atualizarMuseus  = infoServer.isFalhaRequisicao() ? statusDeterminarAtualizacaoSim : statusDeterminarAtualizacaoNao;
+			
+			at.setDeterminarAtualizacao(atualizarMuseus);//
+			at.setDataUltimaAtualizacao(String.valueOf( c.getTimeInMillis()));
+			at.setNome_tabela("museu");
+			at.setDescricaoLogDev(infoServer.getMsgErroServer());
+			at.setDescricaoLogUsuario(infoServer.getMsgUsuario());
+			
+			
+			RecTourDatabase.inserirAtualizacao(at); 
+			
+			atualizandoMuseu = false;
+			if(iAtualizarMuseus != null){
+				iAtualizarMuseus.plotarMuseus();
+			}
+			
+			if(iAtualizacoesFinalizadas != null){
+				iAtualizacoesFinalizadas.notificar(automatoRecuperarMuseu.idMuseu);
+			}
+			
+			break;
+
+		case AutomatoBuscarCentrosCompras.idShopping:
+
+			
+			String atualizarCentrosCompras = infoServer.isFalhaRequisicao() ? statusDeterminarAtualizacaoSim : statusDeterminarAtualizacaoNao;
+			
+			at.setDeterminarAtualizacao(atualizarCentrosCompras);//
+			at.setDataUltimaAtualizacao(String.valueOf( c.getTimeInMillis()));
+			at.setNome_tabela("shopping");
+			at.setDescricaoLogDev(infoServer.getMsgErroServer());
+			at.setDescricaoLogUsuario(infoServer.getMsgUsuario());
+			
+			
+			RecTourDatabase.inserirAtualizacao(at); 
+			
+			atualizandoShopping = false;
+			if(iAtualizarShoppings != null){
+				iAtualizarShoppings.plotarShoppings();
+			}
+			
+			if(iAtualizacoesFinalizadas != null){
+				iAtualizacoesFinalizadas.notificar(automatoRecuperarShopping.idShopping);
+			}
+			
+			break;
+			
+		case AutomatoBuscarTeatros.idTeatro:
+			
+			String atualizarTeatros = infoServer.isFalhaRequisicao() ? statusDeterminarAtualizacaoSim : statusDeterminarAtualizacaoNao;
+			
+			at.setDeterminarAtualizacao(atualizarTeatros);//
+			at.setDataUltimaAtualizacao(String.valueOf( c.getTimeInMillis()));
+			at.setNome_tabela("teatro");
+			at.setDescricaoLogDev(infoServer.getMsgErroServer());
+			at.setDescricaoLogUsuario(infoServer.getMsgUsuario());
+			
+			
+			RecTourDatabase.inserirAtualizacao(at); 
+			
+			atualizandoTeatro = false;
+			if(iAtualizarTeatros != null){
+				iAtualizarTeatros.plotarTeatros();
+			}
+			
+			if(iAtualizacoesFinalizadas != null){
+				iAtualizacoesFinalizadas.notificar(automatoRecuperarTeatro.idTeatro);
+			}
+			
+			break;
+
+		case AutomatoBuscarPontesRecife.idPonte:
+			
+			String atualizarPontes = infoServer.isFalhaRequisicao() ? statusDeterminarAtualizacaoSim : statusDeterminarAtualizacaoNao;
+			
+			at.setDeterminarAtualizacao(atualizarPontes);//
+			at.setDataUltimaAtualizacao(String.valueOf( c.getTimeInMillis()));
+			at.setNome_tabela("ponte");
+			at.setDescricaoLogDev(infoServer.getMsgErroServer());
+			at.setDescricaoLogUsuario(infoServer.getMsgUsuario());
+			
+			RecTourDatabase.inserirAtualizacao(at); 
+			
+			atualizandoPonte = false;
+			if(iAtualizarPontes != null){
+				iAtualizarPontes.plotarPontes();
+			}
+			
+			if(iAtualizacoesFinalizadas != null){
+				iAtualizacoesFinalizadas.notificar(automatoRecuperarPonte.idPonte);
+			}
+			
+			
+			break;
+			
+		default:
+			break;
+		}
+
+		
+	}
+	
+	private boolean atualizarTempos(String dataUltimaAtualizacao){
+		
+		long horaAtualizouMaisUmaHora = Long.valueOf( dataUltimaAtualizacao) + tempoParaExpirar; // Hora que atualizou mais 1h para atualizar novamente
+		long horaAgora     = System.currentTimeMillis()   ;//Hora do sistema
+		
+		return  horaAgora > horaAtualizouMaisUmaHora;
+		
+	}
+	
+	private void initAutomatos(){
+		
+		automatoRecuperarRestaurante = new AutomatoBuscarRestaurante();
+		automatoRecuperarHotel       = new AutomatoBuscarHoteis();
+		automatoRecuperarMuseu       = new AutomatoBuscarMuseus();
+		automatoRecuperarShopping    = new AutomatoBuscarCentrosCompras();
+		automatoRecuperarTeatro      = new AutomatoBuscarTeatros();
+		automatoRecuperarPonte       = new AutomatoBuscarPontesRecife();
+	}
+	
+	private void verificarStatusAtualizacaoTabelas(){
+		//Tabela
+		Atualizacao aRestaurantes = (Atualizacao) RecTourDatabase.recuperarItemAtualizacao("restaurante");
+		atualizandoRestaurante    =  aRestaurantes.getDeterminarAtualizacao().equals("S")|| atualizarTempos(aRestaurantes.getDataUltimaAtualizacao());//Vai verificar se a atualizacao vai ser processada ou n 
+		
+		Atualizacao aHotel        = (Atualizacao) RecTourDatabase.recuperarItemAtualizacao("hotel");
+		atualizandoHotel          =  aHotel.getDeterminarAtualizacao().equals("S")|| atualizarTempos(aHotel.getDataUltimaAtualizacao());//Vai verificar se a atualizacao vai ser processada ou n
+		
+		Atualizacao aMuseu        = (Atualizacao) RecTourDatabase.recuperarItemAtualizacao("museu");
+		atualizandoMuseu          = aMuseu.getDeterminarAtualizacao().equals("S") || atualizarTempos(aMuseu.getDataUltimaAtualizacao());
+		
+		Atualizacao aShopping     = (Atualizacao) RecTourDatabase.recuperarItemAtualizacao("shopping");
+		atualizandoShopping       = aShopping.getDeterminarAtualizacao().equals("S") || atualizarTempos(aShopping.getDataUltimaAtualizacao());
+
+		Atualizacao aTeatro       = (Atualizacao) RecTourDatabase.recuperarItemAtualizacao("teatro");
+		atualizandoTeatro         = aTeatro.getDeterminarAtualizacao().equals("S") || atualizarTempos(aTeatro.getDataUltimaAtualizacao());
+
+		Atualizacao aPonte        = (Atualizacao) RecTourDatabase.recuperarItemAtualizacao("ponte");
+		atualizandoPonte          = aPonte.getDeterminarAtualizacao().equals("S") || atualizarTempos(aPonte.getDataUltimaAtualizacao());
+	}
+	
+	
+	public Cursor listarTabelasAtualizacao(){
+		return RecTourDatabase.recuperarTabelasAtualizacao();
+	}
+	
+}

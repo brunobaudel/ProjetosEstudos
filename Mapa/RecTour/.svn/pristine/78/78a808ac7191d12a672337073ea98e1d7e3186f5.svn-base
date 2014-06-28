@@ -1,0 +1,135 @@
+package mobi.rectour.atualizacoesremotas;
+
+import java.util.Calendar;
+
+import mobi.rectour.atualizacoesremotas.entidade.Atualizacao;
+import mobi.rectour.geral.RecTourDatabase;
+import mobi.rectour.recRestaurantes.automato.AutomatoBuscarRestaurante;
+import android.content.Context;
+
+public class AtualizarDadosApp {
+	
+    public interface CallBackAtualizacoesProntas{
+		
+		void operacaoConcluida(int codigoAutomato);
+		
+	}
+	
+	
+	//Automato Kml Ruas
+	private AutomatoBuscarRestaurante   automatoRecuperarRestaurante;
+	
+	
+	private Context context;
+	
+	private Calendar c = Calendar.getInstance(); 
+	
+	long tempoParaExpirar = 60000l * 5; //  60 minute tempo para atualizar as tabelas 1h
+	
+	//Cameras e Ruas 
+	public static boolean atualizandoRestaurante;
+	
+	
+	//****************************Quando o automato acabar com a atualizacao ele notifica a tela para *******************************
+	/**
+	 * Atualiza a tela das dos Restaurantes 
+	 * @author Bruno
+	 *
+	 */
+	public interface  IatualizarRestaurantes{
+		void plotarRestaurantes();
+		
+	}
+	
+	public static IatualizarRestaurantes iAtualizarRestaurantes;
+	
+	
+
+	//******************************************************************************************
+	
+	
+	
+	CallBackAtualizacoesProntas cbap = new CallBackAtualizacoesProntas() {
+		
+		@Override
+		public void operacaoConcluida(int codigoAutomato) {
+			
+			atualizarTabelas(codigoAutomato);
+		}
+	};
+	
+	public AtualizarDadosApp(Context context) {
+		
+		this.context = context;
+		
+		
+		//inicia todos os automatos
+		 initAutomatos();
+		 //verifica as tabelas que seram atualizadas
+		 verificarStatusAtualizacaoTabelas();
+		
+	}
+	
+	public void atualizarRestaurante(){
+		
+		if(atualizandoRestaurante){
+			
+			automatoRecuperarRestaurante.setCbap(cbap);
+			automatoRecuperarRestaurante.executar();
+		}
+	}
+	
+	
+	
+
+	private void atualizarTabelas(int codigoAutomato){ //Falta verificar se deu erro na aualizacao
+		
+		Atualizacao at = new Atualizacao();
+		Calendar c = Calendar.getInstance();
+		switch (codigoAutomato) {
+		case 1:
+			
+			at.setDataUltimaAtualizacao(String.valueOf( c.getTimeInMillis()));
+			at.setDeterminarAtualizacao("N");
+			at.setNome_tabela("restaurante");
+			
+			RecTourDatabase.inserirAtualizacao(at); 
+			
+			atualizandoRestaurante = false;
+			if(iAtualizarRestaurantes != null){
+				iAtualizarRestaurantes.plotarRestaurantes();
+				
+			}
+			
+			break;
+		
+		default:
+			break;
+		}
+		
+	}
+	
+	private boolean atualizarTempos(String dataUltimaAtualizacao){
+		
+		long horaAtualizouMaisUmaHora = Long.valueOf( dataUltimaAtualizacao) + tempoParaExpirar; // Hora que atualizou mais 1h para atualizar novamente
+		long horaAgora     = System.currentTimeMillis()   ;//Hora do sistema
+		
+		return  horaAgora > horaAtualizouMaisUmaHora;
+		
+	}
+	
+	private void initAutomatos(){
+		
+		automatoRecuperarRestaurante = new AutomatoBuscarRestaurante();
+	}
+	
+	private void verificarStatusAtualizacaoTabelas(){
+		//Tabela
+		Atualizacao aRestaurantes = (Atualizacao) RecTourDatabase.recuperarItemAtualizacao("restaurante");
+		atualizandoRestaurante =  aRestaurantes.getDeterminarAtualizacao().equals("S")|| atualizarTempos(aRestaurantes.getDataUltimaAtualizacao());//Vai verificar se a atualizacao vai ser processada ou n 
+		
+	}
+	
+	
+
+}

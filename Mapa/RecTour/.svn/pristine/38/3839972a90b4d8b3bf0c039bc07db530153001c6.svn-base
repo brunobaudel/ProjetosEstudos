@@ -1,0 +1,39 @@
+package mobi.rectour.geral;
+
+import java.io.File;
+
+import android.os.Environment;
+
+public class RecTourGeral {
+
+	public static final String RT_NOME_DIRETORIO = "RT";
+	public static final String RT_NOME_DIRETORIO_TEMPORARIO = "temp";
+	public static final String RT_NOME_DIRETORIO_ARQUIVOS = "arquivos";	
+
+	
+	public static String getExternalStorageDir() {
+		String str;
+		if (!"mounted".equals(Environment.getExternalStorageState()))
+			str = "";
+		else
+			str = Environment.getExternalStorageDirectory().getAbsolutePath();
+		return str;
+	}
+
+	public static String getDiretorioRecTour() {
+		String str = getExternalStorageDir();
+		if ("".equals(str))
+			str = "";
+		else
+			str = str + "/" + RT_NOME_DIRETORIO;
+		
+		File dir = new File(str);
+		dir.mkdirs();
+		
+		dir = new File(str + "/" + RT_NOME_DIRETORIO_ARQUIVOS);
+		dir.mkdirs();
+		
+		return str;
+	}
+	
+}

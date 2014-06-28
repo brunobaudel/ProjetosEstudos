@@ -1,0 +1,273 @@
+package mobi.rectour.recHoteis.gui;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import mobi.rectour.R;
+import mobi.rectour.atualizacoesremotas.AtualizarDadosApp;
+import mobi.rectour.atualizacoesremotas.AtualizarDadosApp.IatualizarRestaurantes;
+import mobi.rectour.geral.RecTourDatabase;
+import mobi.rectour.mapa.funcoes.FuncoesMenu;
+import mobi.rectour.mapa.funcoes.FuncoesMenu.IFuncoesMenu;
+import mobi.rectour.mapa.funcoes.v2.funcMyLocation.LocalizacaoAtualV2;
+import mobi.rectour.mapa.funcoes.v2.plotarpontos.PlotarPontosV2;
+import android.database.Cursor;
+import android.os.Bundle;
+import android.support.v4.app.Fragment;
+import android.view.InflateException;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.View.OnClickListener;
+import android.view.ViewGroup;
+import android.widget.AdapterView;
+import android.widget.AdapterView.OnItemClickListener;
+import android.widget.ListView;
+import android.widget.ProgressBar;
+import android.widget.RadioGroup;
+import android.widget.TextView;
+import android.widget.ViewFlipper;
+
+import com.google.android.gms.maps.CameraUpdateFactory;
+import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.GoogleMap.CancelableCallback;
+import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.CameraPosition;
+import com.google.android.gms.maps.model.LatLng;
+
+public class MapaHoteisMapFr extends Fragment implements
+		OnClickListener , OnItemClickListener, RadioGroup.OnCheckedChangeListener, IatualizarRestaurantes{
+
+	public static String PKG_Mapa_Hotel = "mobi.rectour.recRestaurantes.gui.MapaHoteisMapFr";
+
+	//Mapa
+	private GoogleMap mMap;
+
+	
+	private LayoutInflater layoutInf;
+	
+	private static View view;
+
+	//private CursorADPTListaLocais cAdptListaLocais;
+	//private ListView lvRuas;
+	
+	//Lista Vagas
+	private CursorADPTListaHoteis cAdptListaVagas; 
+	private ListView lvRestaurantes;
+	
+	//Fliper
+	private ViewFlipper mFlipper;
+	private static final int STATE_MAP = 0;
+	private static final int STATE_LIST = 1;
+	private int mState;
+	
+	private static LatLng latLngRecifeAntigo =  new LatLng(-8.060238799021613,-34.87238612025976);
+	
+	
+	//Ponto inicial para o mapa
+	static final CameraPosition RECIFEANTIGO =
+	            new CameraPosition.Builder().target(latLngRecifeAntigo)
+	                    .zoom(16.0f)
+	                    .build();
+	 
+	 //Funções do menu
+	 FuncoesMenu fmPlotarPontos ;
+	 FuncoesMenu fmTracarRotas  ;
+	 FuncoesMenu fmLocalizacaoAtual  ;
+	 
+	 //Progress Bar Carregamento
+	 private ProgressBar carregando;
+	 
+	  
+	public MapaHoteisMapFr() {
+		//super();
+	}
+
+	@Override
+	public View onCreateView(LayoutInflater inflater, ViewGroup container, 
+			Bundle savedInstanceState) {
+
+		if (view != null) {
+	        ViewGroup parent = (ViewGroup) view.getParent();
+	        if (parent != null)
+	            parent.removeView(view);
+	    }
+	    try {
+	    	
+	        view = inflater.inflate(R.layout.telamapav2, container, false);
+	        
+	        mMap = ((SupportMapFragment) getFragmentManager().findFragmentById(R.id.map)).getMap();
+			
+			
+			//Set views
+			mFlipper = (ViewFlipper) view.findViewById(R.id.vf);
+			//(lvRuas  = (ListView)view.findViewById(R.id.lvLocais)).setOnItemClickListener(this);
+			((RadioGroup) view.findViewById(R.id.rgMapaLista)).setOnCheckedChangeListener(this);
+			((TextView) view.findViewById(R.id.tvTitulo)).setText("Restaurantes");
+			
+			
+			//Set list
+			//cAdptListaLocais = new CursorADPTListaLocais(getActivity(), repRotas.getInfoRotas(),this);
+			//lvRuas.setAdapter(cAdptListaLocais);
+			
+			//Set Inflater
+			setLayoutInf(inflater);		
+			
+			
+			//Set progressBar
+			// carregando = (ProgressBar) view.findViewById(R.id.pbCarregando);
+			
+			 
+			 //Set callback atualização
+			 AtualizarDadosApp.iAtualizarRestaurantes  = this;
+			  
+			 // lvVagas Set lista vagas 
+			 lvRestaurantes =  (ListView)view.findViewById(R.id.lvRestaurante);
+			
+			 setUpMap();
+			
+	    } catch (InflateException e) {
+	        /* map is already there, just return view as it is */
+	    	e.printStackTrace();
+	    }
+	    return view;
+		
+	}
+	
+	CancelableCallback callback = new CancelableCallback() {
+		
+		@Override
+		public void onFinish() {
+			// TODO Auto-generated method stub
+			if(!AtualizarDadosApp.atualizandoRestaurante){
+				
+				
+				Cursor cLocalizacao =  RecTourDatabase.recuperarRestaurantesDistancia(latLngRecifeAntigo); ; 
+				
+				IFuncoesMenu iFuncoesMenuPlotarPontos     = new PlotarPontosV2(cLocalizacao, getActivity());
+				fmPlotarPontos     						  = new FuncoesMenu(iFuncoesMenuPlotarPontos);
+				fmPlotarPontos.executarFuncao(mMap);
+				
+				cAdptListaVagas = new CursorADPTListaHoteis( getActivity(), cLocalizacao);
+				lvRestaurantes.setAdapter(cAdptListaVagas);
+				
+			}
+		}
+		
+		@Override
+		public void onCancel() {
+			// TODO Auto-generated method stub
+			
+		}
+	};
+
+	private void setUpMap() {
+		// Hide the zoom controls as the button panel will cover it.
+		mMap.getUiSettings().setZoomControlsEnabled(false);
+		
+		mMap.animateCamera(CameraUpdateFactory.newCameraPosition(RECIFEANTIGO), 10, callback);
+		//mMap.setInfoWindowAdapter(new MapaVagasEstacionamentoMapAdptMarker(getLayoutInf() , null ) );
+		
+		List<String> listInt = new ArrayList<String>();
+
+		
+		//Seta as interfaces de funcoes do menu com suas classes
+		IFuncoesMenu iFuncoesMenuLocalizacaoAtual = new LocalizacaoAtualV2(getActivity());
+		
+		fmLocalizacaoAtual = new FuncoesMenu(iFuncoesMenuLocalizacaoAtual);
+		
+		fmLocalizacaoAtual.executarFuncao(mMap);
+		
+		if(!AtualizarDadosApp.atualizandoRestaurante) {//Se estiver atualizando as rotas ele n entra
+			
+			
+			carregando.setVisibility(View.INVISIBLE);
+		}
+		
+	}
+	
+	private void moveMarkerMyLocation(){
+		
+	}
+
+	
+	@Override
+	public void onClick(View v) {
+	
+	}
+
+	public LayoutInflater getLayoutInf() {
+		return layoutInf;
+	}
+
+	public void setLayoutInf(LayoutInflater layoutInf) {
+		this.layoutInf = layoutInf;
+	}
+
+	@Override
+	public void onItemClick(AdapterView<?> arg0, View arg1, int arg2, long arg3) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void onCheckedChanged(RadioGroup group, int checkedId) {
+		switch (checkedId) {
+		case R.id.rbMapa:
+			
+			if (mState == STATE_MAP) {
+				return;
+			}
+
+			mFlipper.setDisplayedChild(STATE_MAP);
+			mState = STATE_MAP;
+			
+			break;
+		case R.id.rbLista:
+			if (mState == STATE_LIST) {
+				return;
+			}
+
+			mFlipper.setDisplayedChild(STATE_LIST);
+			mState = STATE_LIST;
+			
+			break;
+		default:
+			break;
+		}
+		
+	}
+	
+	public void iniciarProcesso() {
+		carregando.setVisibility(View.VISIBLE);
+		
+	}
+
+	
+	public void pararProgress(boolean erro) {
+	
+		
+		fmPlotarPontos    .cancelarFuncao(1); 
+		
+		//Set novo cursor para plotar as cameras
+		
+		fmPlotarPontos	  .executarFuncao(mMap);
+		
+		carregando.setVisibility(View.INVISIBLE);
+	}
+
+	@Override
+	public void plotarRestaurantes() {
+		
+		 carregando.setVisibility(View.INVISIBLE);
+	}
+
+	
+	
+	@Override
+	public void onPause() {
+		super.onPause();
+		
+		
+	}
+
+}

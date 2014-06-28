@@ -1,0 +1,472 @@
+package mobi.rectour.geral;
+
+import java.io.File;
+
+import mobi.rectour.atualizacoesremotas.entidade.Atualizacao;
+import mobi.rectour.recHoteis.entidades.Hotel;
+import mobi.rectour.recRestaurantes.entidades.Restaurante;
+import mobi.rectour.util.UtilRecTour;
+import android.content.ContentValues;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
+import android.util.Log;
+
+import com.google.android.gms.maps.model.LatLng;
+
+
+public class RecTourDatabase extends Object {
+
+	//Variaveis para fazer o calculo da distancia
+	public final static String CAMPO_TB_LATITUDE_SEN = "latitude_sen"  ;
+	public final static String CAMPO_TB_LATITUDE_COS = "latitude_cos"  ;
+	public final static String CAMPO_TB_LONGITUDE_SEN = "longitude_sen";
+	public final static String CAMPO_TB_LONGITUDE_COS = "longitude_cos";
+	
+	
+	
+	public final static String strAddCampos =  CAMPO_TB_LATITUDE_SEN + " INTEGER  NULL," 
+			+ CAMPO_TB_LATITUDE_COS + " INTEGER  NULL," 
+			+ CAMPO_TB_LONGITUDE_SEN + " INTEGER  NULL,"
+			+ CAMPO_TB_LONGITUDE_COS + " INTEGER  NULL)";
+	
+	
+	
+	static int versaoDoBanco = 0;
+	public static String NOME_DO_BANCO = "RecTourDB.db";
+	
+	static SQLiteDatabase db;
+
+	public RecTourDatabase(){
+		super();
+	}
+
+	public static SQLiteDatabase getBanco() {
+		SQLiteDatabase db = SQLiteDatabase.openDatabase(RecTourVariaveisGlobais.diretorioApp + File.separator + NOME_DO_BANCO, null,
+							SQLiteDatabase.NO_LOCALIZED_COLLATORS | SQLiteDatabase.OPEN_READWRITE | SQLiteDatabase.CREATE_IF_NECESSARY ); 
+
+		return db;
+	}
+	
+	public static boolean bancoJaCriado() {
+		try {
+			File f = new File(RecTourVariaveisGlobais.diretorioApp + File.separator + NOME_DO_BANCO);
+			return f.exists();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return false;
+	}	
+	
+	public static void criarTodasAsTabelas() {
+
+		try{
+			getVersaoDoBanco();
+		}catch(Exception e){
+			versaoDoBanco = 0;
+		}
+
+		switch (versaoDoBanco) {
+		case 0:
+			criarTodasAsTabelasV1();
+
+		default:
+			break;
+		}
+		
+	}
+	
+	public static void getVersaoDoBanco(){
+		SQLiteDatabase db = RecTourDatabase.getBanco();
+		Cursor cursor = db.rawQuery("SELECT versao_estrutura_bd FROM configuracoes", null);
+
+		cursor.moveToFirst();
+		versaoDoBanco = cursor.getInt(cursor.getColumnIndex("versao_estrutura_bd"));
+
+		cursor.close();
+		db.close();		
+	}
+	
+	public static void salvarVersaoDoBanco(){
+		try{
+			SQLiteDatabase db = getBanco();
+			ContentValues valoresIniciais = new ContentValues();
+			valoresIniciais.put("versao_estrutura_bd", versaoDoBanco);
+			
+			Cursor cursor = db.rawQuery("SELECT versao_estrutura_bd FROM configuracoes", null);
+			if (cursor.getCount() == 0) {
+				valoresIniciais.put("ultimo_sequencial_gerado", 0);
+				db.insert("configuracoes", null, valoresIniciais);
+			} else {
+				db.update("configuracoes", valoresIniciais, null, null);
+			}			
+			cursor.close();
+			db.close();
+			
+		}catch(Exception e){
+			e.printStackTrace();
+		}
+	}
+	
+	
+	private static void criarTodasAsTabelasV1(){
+		
+		try{
+			db = getBanco();
+			db.execSQL("BEGIN TRANSACTION");
+			
+			try{
+				db.execSQL("CREATE TABLE restaurante(" + "rtID INTEGER  NOT NULL PRIMARY KEY,"
+						+ "rtNome             		   VARCHAR( 70) NULL," 
+						+ "rtEndereco          		   VARCHAR(150) NULL,"
+						+ "rtTelefone          		   VARCHAR( 50) NULL," 
+						+ "rtEspecialidade     		   VARCHAR( 50) NULL,"
+						+ "rtSite            		   VARCHAR(100) NULL," 
+						+ "rtEmail         			   VARCHAR( 80) NULL," 
+						+ "rtLatitude            	   DECIMAL(2,17) NULL," 
+						+ "rtLongitude         		   DECIMAL(2,17) NULL," + strAddCampos);
+
+				db.execSQL("CREATE TABLE hotel(" + "rtID INTEGER  NOT NULL PRIMARY KEY,"
+						+ "rtNome             		   VARCHAR(  70) NULL," 
+						+ "rtEndereco          		   VARCHAR( 150) NULL,"
+						+ "rtTelefone          		   VARCHAR(  50) NULL," 
+						+ "rtSite            		   VARCHAR( 100) NULL," 
+						+ "rtLatitude            	   DECIMAL(2,17) NULL," 
+						+ "rtLongitude         		   DECIMAL(2,17) NULL," + strAddCampos);
+
+				db.execSQL("CREATE TABLE shopping(" + "rtID INTEGER  NOT NULL PRIMARY KEY,"
+						+ "rtNome             		   VARCHAR(  50) NULL," 
+						+ "rtDescricao         		   TEXT   ( 600) NULL,"
+						+ "rtBairro          		   VARCHAR(  50) NULL,"
+						+ "rtLogradouro                VARCHAR( 100) NULL,"
+						+ "rtTelefone          		   VARCHAR(  50) NULL," 
+						+ "rtSite            		   VARCHAR( 100) NULL," 
+						+ "rtLatitude            	   DECIMAL(2,17) NULL," 
+						+ "rtLongitude         		   DECIMAL(2,17) NULL,"
+						+ "rtFuncionamento     		   VARCHAR(  20) NULL," 
+						+ "rtFuncionamentoDomingo	   VARCHAR(  20) NULL," + strAddCampos); 
+
+				db.execSQL("CREATE TABLE museu(" + "rtID INTEGER  NOT NULL PRIMARY KEY,"
+						+ "rtNome             		   VARCHAR(  50) NULL," 
+						+ "rtDescricao         		   TEXT   ( 600) NULL,"
+						+ "rtBairro          		   VARCHAR(  50) NULL,"
+						+ "rtLogradouro                VARCHAR( 100) NULL,"
+						+ "rtTelefone          		   VARCHAR(  50) NULL," 
+						+ "rtSite            		   VARCHAR( 100) NULL," 
+						+ "rtLatitude            	   DECIMAL(2,17) NULL," 
+						+ "rtLongitude         		   DECIMAL(2,17) NULL," + strAddCampos);
+
+				db.execSQL("CREATE TABLE teatro(" + "rtID INTEGER  NOT NULL PRIMARY KEY,"
+						+ "rtNome             		   VARCHAR(  50) NULL," 
+						+ "rtDescricao         		   TEXT   ( 600) NULL,"
+						+ "rtBairro          		   VARCHAR(  50) NULL,"
+						+ "rtLogradouro                VARCHAR( 100) NULL,"
+						+ "rtTelefone          		   VARCHAR(  50) NULL," 
+						+ "rtLatitude            	   DECIMAL(2,17) NULL," 
+						+ "rtLongitude         		   DECIMAL(2,17) NULL," + strAddCampos);
+			
+				db.execSQL("CREATE TABLE descricao(" + "rtID INTEGER  NOT NULL PRIMARY KEY,"
+						+ "rtCodigoIdioma      		   INTEGER NULL," 
+						+ "rtIdioma         		   VARCHAR(  30) NULL,"
+						+ "rtDescricao          	   TEXT   ( 600) NULL,"
+						+ "rtShoppingFk                INTEGER   NOT NULL,"
+						+ "rtMuseuFk          		   INTEGER   NOT NULL," 
+						+ "rtTeatroFk            	   INTEGER   NOT NULL,"
+						+ "FOREIGN KEY(rtShoppingFk) REFERENCES shopping(rtID) ON DELETE NO ACTION ON UPDATE NO ACTION,"
+						+ "FOREIGN KEY(rtMuseuFk)    REFERENCES museu(rtID)    ON DELETE NO ACTION ON UPDATE NO ACTION,"
+						+ "FOREIGN KEY(rtTeatroFk)   REFERENCES teatro(rtID)   ON DELETE NO ACTION ON UPDATE NO ACTION)");
+						
+				
+				db.execSQL("CREATE TABLE configuracoes(" + "ultimo_sequencial_gerado INTEGER NOT NULL,"
+						+ "id_instalacao 			  CHAR(6)         NULL,"
+						+ "versao_estrutura_bd 		  INTEGER     NOT NULL)");
+				
+				
+				db.execSQL("CREATE TABLE log_atualizacao(" + "rtID INTEGER  NOT NULL PRIMARY KEY,"
+						+ "rtTabela             		    TEXT     NULL," 
+						+ "rtDt_ultima_att        		    NUMERIC  NULL,"
+						+ "rtAtualizar          		    TEXT(  50) NULL)");
+				
+				
+				db.execSQL("COMMIT TRANSACTION");
+				
+				versaoDoBanco = 1;
+				salvarVersaoDoBanco();
+				
+				
+				///--- MASSA DE DADOS PARA TESTE
+				/*
+				inserirRestauranteParaTestes(1, "A Porteira", "R Doutor José Maria 804 lj A Encruzilhada Recife", "81 3426 2220", "", "", "");
+				inserirRestauranteParaTestes(2, "Acaua", "Patio de São Pedro, 48 - São João José Recife", "81 3424 5071", "Carne de Sol", "", "");
+				inserirRestauranteParaTestes(3, "Adega", "Clube Portuguues - Av. Conselheiro Rosa e Silva, 172 Graças Recife", "81 3224 6258", "Portuguesa", "www.clubeportuguesdorecife.com.br/2009/ctudo-gastronomia.php#adega", "");
+				
+				inserirHotelParaTestes(1, "Albergue Piratas da Praia Hostel", "Avenida Conselheiro Aguiar, nº 2034/307, 3º andar - Boa Viagem, Recife - PE- CEP: 51111-010", "(81) 3326 1281 / (81) 9649 6887", "www.piratasdapraia.com", -8.107019, -34.889533);
+				inserirHotelParaTestes(2, "Boa Viagem Hostel", "Rua Aviador Severiano Lins, 455 - Boa Viagem, Recife - PE - CEP: 51111-050", "(81) 3326 9572 / Fax: (81) 3326 9572", "www.hostelboaviagem.com.br", -8.110046, -34.894322);
+				inserirHotelParaTestes(3, "Imperial Suítes Flat", "Rua Antônio Lumack do Monte, 203, Boa Viagem, Recife - PE - CEP: 51.020-350", "(81)2122.0525", "", -8.117141, -34.901665);
+				*/
+			}catch(Exception e){
+				db.execSQL("ROLLBACK");
+				e.printStackTrace();
+			}
+			
+		}catch(Exception e){
+			
+		}
+	
+	}
+	
+
+	//***********************************Inicio Restaurante***********************************
+	
+	/**
+	 * Insere restaurantes para teste com todos os atributos
+	 * 
+	 * @param id
+	 * @param nome
+	 * @param endereco
+	 * @param telefone
+	 * @param especialidade
+	 * @param site
+	 * @param email
+	 */
+	public static void inserirRestauranteParaTestes( int id, String nome, String endereco, String telefone, 
+											 		     String especialidade, String site, String email ){
+		try {
+			SQLiteDatabase db = getBanco();
+			ContentValues valoresIniciais = new ContentValues();
+
+			valoresIniciais.put("rtID",            id           );
+			valoresIniciais.put("rtNome",          nome         );
+			valoresIniciais.put("rtEndereco",      endereco     );
+			valoresIniciais.put("rtTelefone",      telefone     );
+			valoresIniciais.put("rtEspecialidade", especialidade);
+			valoresIniciais.put("rtSite",          site         );
+			valoresIniciais.put("rtEmail",         email        );
+
+			db.insert("restaurante", null, valoresIniciais);
+			db.close();
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+	
+	
+	/**
+	 * Insere restaurantes para teste com o objeto restaurante
+	 * 
+	 * @param id
+	 * @param nome
+	 * @param endereco
+	 * @param telefone
+	 * @param especialidade
+	 * @param site
+	 * @param email
+	 */
+	public static void inserirRestauranteParaTestes(Restaurante restaurante ){
+		try {
+			SQLiteDatabase db = getBanco();
+			ContentValues valoresIniciais = new ContentValues();
+
+			valoresIniciais.put("rtID",            restaurante.getRtID());
+			valoresIniciais.put("rtNome",          restaurante.getRtNome() );
+			valoresIniciais.put("rtEndereco",      restaurante.getRtEndereco()     );
+			valoresIniciais.put("rtTelefone",      restaurante.getRtTelefone()     );
+			valoresIniciais.put("rtEspecialidade", restaurante.getRtEspecialidade());
+			valoresIniciais.put("rtSite",          restaurante.getRtSite()         );
+			valoresIniciais.put("rtEmail",         restaurante.getRtEmail()        );
+
+			db.insert("restaurante", null, valoresIniciais);
+			db.close();
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+	
+	
+	public static void deleteAllRestauranteParaTestes(){
+		try {
+			SQLiteDatabase db = getBanco();
+			db.delete("restaurante", "", null);
+			db.close();
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+	
+	public static Cursor recuperarRestaurantesDistancia(LatLng center){
+		SQLiteDatabase db = getBanco();
+		 String query = "SELECT *, "
+					+ UtilRecTour.buildDistanceQuery(center.latitude, center.longitude)
+					+ " FROM restaurante order by distancia DESC"  ;
+		 
+		 return db.rawQuery(query, null);
+		 
+	 }
+	
+	
+	
+	//***********************************Fim Restaurante***********************************
+	
+	//***********************************Inicio Hotel***********************************
+	 
+	 public static void inserirHotelParaTestes(int id, String nome, String endereco, String telefone, 
+	               String site, double latitude, double longitude){
+	  
+	  try{
+	   SQLiteDatabase db = getBanco();
+	   ContentValues valoresIniciais = new ContentValues();
+
+	   valoresIniciais.put("rtID",        id       );
+	   valoresIniciais.put("rtNome",      nome     );
+	   valoresIniciais.put("rtEndereco",  endereco );
+	   valoresIniciais.put("rtTelefone",  telefone );
+	   valoresIniciais.put("rtSite",      site     );
+	   valoresIniciais.put("rtLatitude",  latitude );
+	   valoresIniciais.put("rtLongitude", longitude);
+	   
+	   
+
+	   db.insert("hotel", null, valoresIniciais);
+	   db.close();
+	   
+	  }catch(Exception e){
+	   Log.w("ksx", "ERRO: " + e.toString());
+	   e.printStackTrace();
+	  }
+	 }
+	 
+	 public static void inserirHotelParaTestes(Hotel hotel ){
+		  try {
+		   SQLiteDatabase db = getBanco();
+		   ContentValues valoresIniciais = new ContentValues();
+
+		   valoresIniciais.put("rtID",            hotel.getRtID()       );
+		   valoresIniciais.put("rtNome",          hotel.getRtNome()     );
+		   valoresIniciais.put("rtEndereco",      hotel.getRtEndereco() );
+		   valoresIniciais.put("rtTelefone",      hotel.getRtTelefone() );
+		   valoresIniciais.put("rtLatitude",      hotel.getLatitude() );
+		   valoresIniciais.put("rtSite",          hotel.getRtSite()     );
+		   valoresIniciais.put("rtLongitude",     hotel.getLongitude());
+		   //	Setando os campos para o bd calcular a distancia	   
+		   valoresIniciais.put(CAMPO_TB_LATITUDE_SEN,     hotel.getCAMPO_TB_LATITUDE_SEN() );
+		   valoresIniciais.put(CAMPO_TB_LATITUDE_COS,     hotel.getCAMPO_TB_LATITUDE_COS() );
+		   valoresIniciais.put(CAMPO_TB_LONGITUDE_SEN,    hotel.getCAMPO_TB_LONGITUDE_SEN() );
+		   valoresIniciais.put(CAMPO_TB_LONGITUDE_COS,    hotel.getCAMPO_TB_LONGITUDE_COS() );
+		   
+		   //
+		   db.insert("hotel", null, valoresIniciais);
+		   db.close();
+
+		  } catch (Exception e) {
+		   e.printStackTrace();
+		  }
+		 }
+	 
+	 
+	 public static void deleteAllHotelParaTestes(){
+	  try {
+	   SQLiteDatabase db = getBanco();
+	   db.delete("hotel", "", null);
+	   db.close();
+
+	  } catch (Exception e) {
+	   e.printStackTrace();
+	  }
+	 }
+	 
+	 
+	 public Cursor recuperarHoteisDistancia(LatLng center){
+		 
+		 String query = "SELECT *, "
+					+ UtilRecTour.buildDistanceQuery(center.latitude, center.longitude)
+					+ " FROM hotel order by distancia DESC"  ;
+		 
+		 return db.rawQuery(query, null);
+		 
+	 }
+	 
+	 
+	 //***********************************Fim Hotel***********************************	 
+	
+	
+	//***********************************Inicio Log Atualização***********************************
+		
+	 public static void inserirAtualizacao(Atualizacao it) {
+			ContentValues cv = new ContentValues();
+			try {
+				cv.put("rtTabela" , it.getNome_tabela());
+				cv.put("rtAtualizar", it.getDeterminarAtualizacao());
+				cv.put("rtDt_ultima_att", it.getDataUltimaAtualizacao());
+				
+				db.insert("log_atualizacao", null, cv);
+				db.close();
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+		}
+		
+	public static Atualizacao recuperarItemAtualizacao(String campo) {
+		SQLiteDatabase db = getBanco();
+		String query = String.format("SELECT * FROM log_atualizacao WHERE rtTabela LIKE '%s'" , campo);
+
+			//query = String.format(query, TabelasBOD.TBL_LogAtualizacao);
+
+			Cursor c = db.rawQuery(query, null);
+
+			Atualizacao at = new  Atualizacao();
+			
+			if (c.getCount() > 0) {
+				while (c.moveToNext()) {
+					
+					at.setDeterminarAtualizacao(c.getString(c
+							.getColumnIndex("rtAtualizar")));
+					at.setDataUltimaAtualizacao(c.getString(c
+							.getColumnIndex("rtDt_ultima_att")));
+					at.setNome_tabela(c.getString(c
+							.getColumnIndex("rtTabela")));
+					
+				}
+				
+			}
+			
+			return at;
+	}
+
+		 //***********************************Fim Log Atualização***********************************	 
+		
+	 
+	 
+	 /*
+	
+	public static void inserirHotelParaTestes(int id, String nome, String endereco, String telefone, 
+			 									  String site, double latitude, double longitude){
+		
+		try{
+			SQLiteDatabase db = getBanco();
+			ContentValues valoresIniciais = new ContentValues();
+
+			valoresIniciais.put("rtID",        id       );
+			valoresIniciais.put("rtNome",      nome     );
+			valoresIniciais.put("rtEndereco",  endereco );
+			valoresIniciais.put("rtTelefone",  telefone );
+			valoresIniciais.put("rtSite",      site     );
+			valoresIniciais.put("rtLatitude",  latitude );
+			valoresIniciais.put("rtLongitude", longitude);
+
+			db.insert("hotel", null, valoresIniciais);
+			db.close();
+			
+		}catch(Exception e){
+			Log.w("ksx", "ERRO: " + e.toString());
+			e.printStackTrace();
+		}
+	}
+	
+	*/
+	
+	
+	
+}

@@ -1,0 +1,54 @@
+package mobi.rectour.recHoteis.gui;
+
+import mobi.rectour.R;
+import mobi.rectour.atualizacoesremotas.AtualizarDadosApp.CallBackAtualizacoesProntas;
+import mobi.rectour.mapa.funcoes.foursquare.AutomatoBuscarVenueMapping;
+import mobi.rectour.mapa.funcoes.googleplaces.automato.AutomatoBuscarLocalGooglePlace;
+import mobi.rectour.util.ProgressDialogRecTour;
+import mobi.rectour.web.InformacoesServidor;
+import android.app.Activity;
+import android.os.Bundle;
+
+public class InformacoesHoteis extends Activity implements CallBackAtualizacoesProntas{
+	
+	public ProgressDialogRecTour progressRecTour;
+	
+	
+	@Override
+	protected void onCreate(Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
+		
+		setContentView(R.layout.hotel_informacoes_tela);
+		
+		progressRecTour = new ProgressDialogRecTour(this);
+		progressRecTour.setCancelable(false);
+		progressRecTour.show();
+		
+		String tipoLocal   = getIntent().getStringExtra("types");
+		String localizacao = getIntent().getStringExtra("latLong");
+		String nomeLocal   = getIntent().getStringExtra("keyword");
+		String idLocal     = getIntent().getStringExtra("idRecTour");
+		
+//		AutomatoBuscarLocalGooglePlace automatoBuscarLocalGP = 
+//				new AutomatoBuscarLocalGooglePlace(nomeLocal, tipoLocal, localizacao,idLocal);
+//		
+//		automatoBuscarLocalGP.setCbap(this);
+//		
+//		automatoBuscarLocalGP.executar();
+		
+		AutomatoBuscarVenueMapping automatoVenue = new AutomatoBuscarVenueMapping(localizacao, nomeLocal, this);
+		automatoVenue.setCbap(this);
+		automatoVenue.executar();
+		
+	}
+
+	@Override
+	public void operacaoConcluida(int codigoAutomato, InformacoesServidor erro) {
+		
+		
+		progressRecTour.dismiss();
+		
+	}
+	
+
+}

@@ -1,0 +1,61 @@
+package mobi.rectour.recRoteirosTurismoLazer.gui.ponte;
+
+import mobi.rectour.R;
+import mobi.rectour.mapa.funcoes.v2.funcMyLocation.BuscarLocalizacaoAtualV2;
+import android.view.LayoutInflater;
+import android.view.View;
+
+import com.google.android.gms.maps.GoogleMap.InfoWindowAdapter;
+import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
+
+public class PonteMaker implements InfoWindowAdapter {
+
+	private final View mWindow;
+	private final View mContents;     
+	
+	public PonteMaker(LayoutInflater inflater ) {
+		mWindow = inflater.inflate(R.layout.balloon_overlay, null);
+		mContents = inflater.inflate(R.layout.balloon_overlay, null);
+	}
+
+	@Override
+	public View getInfoWindow(Marker marker) {
+
+		render(marker, mWindow);
+		return mWindow;
+	}
+
+	@Override
+	public View getInfoContents(Marker marker) {
+
+		render(marker, mContents);
+		return mContents;
+	}
+	
+	private void render(Marker marker, View view) {
+
+//		String title = marker.getTitle();
+		String id = marker.getSnippet();
+		LatLng myLocation = BuscarLocalizacaoAtualV2.getLocalizacao();
+
+		if (id.equals("") || myLocation == null) {
+			return;
+		}
+
+//		Cursor c = RecTourDatabase.recuperarPontesDistancia(myLocation, id);
+//
+//		if (c.moveToNext()) {
+//
+//			String rtNome = c.getString(c.getColumnIndex("rtNome"));
+//			
+//			double distancia = c.getDouble(c.getColumnIndex("distancia"));
+//			double distanciaKm = UtilRecTour.convertPartialDistanceToKm(distancia);
+//
+//			((TextView) view.findViewById(R.id.tvNome)).setText(rtNome);
+//			((TextView) view.findViewById(R.id.tvDistancia)).setText(UtilRecTour.getLegendaDistancia(distanciaKm));
+//			
+//		}
+	}
+	
+}

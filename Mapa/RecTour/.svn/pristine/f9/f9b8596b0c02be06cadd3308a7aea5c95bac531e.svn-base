@@ -1,0 +1,116 @@
+package mobi.rectour.menuprincipal.gui;
+
+
+import mobi.rectour.R;
+import mobi.rectour.atualizacoesremotas.AtualizarDadosApp;
+import mobi.rectour.mapa.funcoes.v2.funcMyLocation.BuscarLocalizacaoAtualV2;
+import mobi.rectour.recHoteis.gui.HotelMapFr;
+import mobi.rectour.recRestaurantes.gui.RestauranteMapaFr;
+import mobi.rectour.recRoteirosTurismoLazer.gui.museu.MuseuMapFr;
+import mobi.rectour.recRoteirosTurismoLazer.gui.ponte.PonteMapFr;
+import mobi.rectour.recRoteirosTurismoLazer.gui.shopping.ShoppingMapFr;
+import mobi.rectour.recRoteirosTurismoLazer.gui.teatro.TeatroMapFr;
+import android.app.Activity;
+import android.content.Intent;
+import android.os.Bundle;
+import android.support.v4.app.Fragment;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.View.OnClickListener;
+import android.view.ViewGroup;
+import android.widget.Button;
+
+public class MenuGeral extends Fragment implements OnClickListener {
+
+		AtualizarDadosApp atualizarDadosGeral;
+		
+		static boolean atualizar = true;
+		
+		
+		public MenuGeral() {}
+			
+		@Override
+		public void onCreate(Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
+		
+		if(atualizar){//Atualiza apenas quando entra no sistema
+			
+			atualizarDadosGeral = new AtualizarDadosApp(getActivity());
+			atualizarDadosGeral.atualizarRestaurante();
+			atualizarDadosGeral.atualizarHotel();
+			atualizarDadosGeral.atualizarMuseu();
+			atualizarDadosGeral.atualizarShoppings();
+			atualizarDadosGeral.atualizarTeatros();
+	
+			atualizarDadosGeral.atualizarPontes();
+			
+			BuscarLocalizacaoAtualV2 buscarLocalizacao = new BuscarLocalizacaoAtualV2(getActivity());
+			
+			
+			atualizar = false;
+		}
+		
+		}
+	
+	@Override
+	public void onAttach(Activity activity) {
+		super.onAttach(activity);
+		
+	
+
+	}
+
+	@Override
+	public View onCreateView(LayoutInflater inflater, ViewGroup container,
+			Bundle savedInstanceState) {
+		
+		View v = inflater.inflate(R.layout.menu_geral_tela, null);
+
+		((Button) v.findViewById(R.id.btHoteis)).setOnClickListener(this);
+		((Button) v.findViewById(R.id.btRestaurante)).setOnClickListener(this);
+		((Button) v.findViewById(R.id.btShoppings)).setOnClickListener(this);
+		((Button) v.findViewById(R.id.btTeatro)).setOnClickListener(this);
+		((Button) v.findViewById(R.id.btMuseus)).setOnClickListener(this);
+		((Button) v.findViewById(R.id.btPontes)).setOnClickListener(this);
+
+		return v;
+	}
+
+	@Override
+	public void onClick(View v) {
+
+		switch (v.getId()) {
+		case R.id.btHoteis:
+     	    ((MenuContainer)getActivity()).refreshFragment(HotelMapFr.PKG_Mapa_Hotel,null,true);
+			break;
+
+		case R.id.btRestaurante:
+			((MenuContainer)getActivity()).refreshFragment(RestauranteMapaFr.PKG_Mapa_Restaurante,null,true);
+			break;
+			
+		case R.id.btShoppings:
+			((MenuContainer)getActivity()).refreshFragment(ShoppingMapFr.PKG_Mapa_Shopping, null, true);
+			break;
+
+		case R.id.btMuseus:
+			((MenuContainer)getActivity()).refreshFragment(MuseuMapFr.PKG_Mapa_Museu,null,true);
+			break;
+
+		case R.id.btTeatro:
+			((MenuContainer)getActivity()).refreshFragment(TeatroMapFr.PKG_Mapa_Teatro,null,true);
+			break;
+
+		case R.id.btPontes:
+			((MenuContainer)getActivity()).refreshFragment(PonteMapFr.PKG_Mapa_Ponte,null,true);
+			break;
+
+		default:
+			break;
+		}
+	}
+
+	@Override
+	public void onActivityResult(int requestCode, int resultCode, Intent data) {
+		super.onActivityResult(requestCode, resultCode, data);
+	}
+}

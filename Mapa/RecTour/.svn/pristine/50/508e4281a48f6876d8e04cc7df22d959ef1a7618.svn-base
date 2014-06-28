@@ -1,0 +1,52 @@
+package mobi.rectour.configuracao.Atualizacoes;
+
+import mobi.rectour.R;
+import mobi.rectour.atualizacoesremotas.AtualizarDadosApp;
+import android.os.Bundle;
+import android.support.v4.app.Fragment;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.AdapterView;
+import android.widget.AdapterView.OnItemClickListener;
+import android.widget.ListView;
+
+public class ConfigAtualizacaoFr extends Fragment implements OnItemClickListener{
+	
+	private ListView listaTabelas;
+	private AtualizacaoADPT atualizacaoADPT;
+	private AtualizarDadosApp atualizarDadosApp;
+	
+	@Override
+	public View onCreateView(LayoutInflater inflater, ViewGroup container,
+			Bundle savedInstanceState) {
+	
+		View view = inflater.inflate(R.layout.config_lista_tabelas_atualizar_tela, container, false);
+          
+		
+		listaTabelas = (ListView) view.findViewById(R.id.lvTabelasAtualizacao);
+		
+		atualizarDadosApp = new AtualizarDadosApp(getActivity());
+		
+		atualizacaoADPT = new AtualizacaoADPT(getActivity(), atualizarDadosApp.listarTabelasAtualizacao() );
+		
+		
+		listaTabelas.setAdapter(atualizacaoADPT);
+		listaTabelas.setOnItemClickListener(this);
+		
+		return view;
+	}
+
+	@Override
+	public void onItemClick(AdapterView<?> arg0, View arg1, int arg2, long arg3) {
+		
+		
+		
+	}
+	
+	
+	
+	
+	
+
+}

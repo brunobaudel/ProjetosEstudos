@@ -1,0 +1,248 @@
+package mobi.rectour.recRoteirosTurismoLazer.gui.museu;
+
+import mobi.rectour.R;
+import mobi.rectour.atualizacoesremotas.AtualizarDadosApp;
+import mobi.rectour.geral.RecTourDatabase;
+import mobi.rectour.mapa.funcoes.FuncoesMenu;
+import mobi.rectour.mapa.funcoes.FuncoesMenu.IFuncoesMenu;
+import mobi.rectour.mapa.funcoes.v2.funcMyLocation.BuscarLocalizacaoAtualV2;
+import mobi.rectour.mapa.funcoes.v2.plotarpontos.PlotarPontosV2;
+import mobi.rectour.mapa.funcoes.v2.plotarpontos.PlotarPontosV2.IConstruirPontos;
+import mobi.rectour.menuprincipal.gui.MenuContainer;
+import mobi.rectour.util.FragmentRecTour;
+import mobi.rectour.util.SupportMapFragmentRecTour;
+import mobi.rectour.util.UtilRecTour;
+import android.app.Activity;
+import android.database.Cursor;
+import android.os.Bundle;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.Button;
+import android.widget.LinearLayout;
+import android.widget.ListView;
+import android.widget.ProgressBar;
+import android.widget.RadioButton;
+import android.widget.RadioGroup;
+import android.widget.RelativeLayout;
+import android.widget.TextView;
+import android.widget.ViewFlipper;
+
+import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.GoogleMap.CancelableCallback;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
+import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
+import com.google.android.gms.maps.model.MarkerOptions;
+
+public class MuseuMapFr extends FragmentRecTour {
+
+	public static String PKG_Mapa_Museu = "mobi.rectour.recRoteirosTurismoLazer.gui.museu.MuseuMapFr";
+
+	// Listas
+	private MuseuListaADPT cAdptListaVagas;
+	private ListView lvMuseu;
+	
+	// Funções do menu
+	FuncoesMenu fmPlotarPontos;
+	
+	// Views configuração detalhes marker
+	private TextView tvNomeMuseu;
+	private TextView tvDistancia;
+
+	public MuseuMapFr() {
+	}
+
+	@Override
+	public void onAttach(Activity activity) {
+		super.onAttach(activity);
+
+		tx  = getActivity().getSupportFragmentManager().beginTransaction();
+		sMf = SupportMapFragmentRecTour.newInstance();
+		sMf.setmCallback(this);
+
+		tx.replace(R.id.fl_map_museu, sMf, "Mapa_Museu");
+		tx.commit();
+	}
+
+	
+	
+	
+	@Override
+	public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+
+		View view = inflater.inflate(R.layout.museu_mapa, container, false);
+
+		((MenuContainer)getActivity()).setTitulo("Museus");
+		
+		mFlipper = (ViewFlipper) view.findViewById(R.id.vf);
+		((RadioGroup) view.findViewById(R.id.rgMapaLista)).setOnCheckedChangeListener(this);
+		
+		((Button) view.findViewById(R.id.btIrHotel)).setOnClickListener(this);
+		(btTracarRotas = (Button) view.findViewById(R.id.btTracarRotas)).setOnClickListener(this);
+		(btNavegacao   = (Button) view.findViewById(R.id.btNavegacao)).setOnClickListener(this);
+		((Button) view.findViewById(R.id.btMinhaLocalizacao)).setOnClickListener(this);
+		((Button) view.findViewById(R.id.btInformacoes)).setOnClickListener(this);
+		(btFechar      = (Button) view.findViewById(R.id.btFechar)).setOnClickListener(this);
+		
+		tvNomeMuseu = (TextView) view.findViewById(R.id.tvNomeHotel);
+		tvDistancia = (TextView) view.findViewById(R.id.tvDistancia);
+
+		setLayoutInf(inflater);
+
+		carregando = (ProgressBar) view.findViewById(R.id.pbCarregando);
+
+		rb = (RadioButton) view.findViewById(R.id.rbMapa);
+
+		lvMuseu = (ListView) view.findViewById(R.id.lvRestaurante);
+
+		llMenu         = (LinearLayout) view.findViewById(R.id.llMenu);
+		llControleMapa = (LinearLayout) view.findViewById(R.id.llControleMapa); 
+		rlNavegacao    = (RelativeLayout) view.findViewById(R.id.rlNavegacao);
+		
+		return view;
+		
+	}
+
+	@Override
+	public void onMapReady(GoogleMap map) {
+		super.onMapReady(map);
+		
+		LatLng setLatLog = BuscarLocalizacaoAtualV2.getLocalizacao();
+		
+		int drawable = configuracoes.getIconLocation().getIdIcone();
+
+		MarkerOptions mo = new MarkerOptions().position(setLatLog).snippet("myLocation")
+				.visible(true)
+				.icon(BitmapDescriptorFactory.fromResource(drawable));
+
+		myLocation = mMap.addMarker(mo);
+		
+		myLocation.setTitle("Oiii");
+
+		animateCamera(setLatLog, 10, 16.0f,callback);
+		
+		//mMap.setOnMapClickListener(onMapClick);
+		mMap.setInfoWindowAdapter(new MuseuMaker(getLayoutInf()));
+		
+		// Se estiveratualizando os pontos n entra
+		if (!AtualizarDadosApp.atualizandoMuseu) {
+			carregando.setVisibility(View.INVISIBLE);
+		}
+		
+	}
+	
+	
+	CancelableCallback callback = new CancelableCallback() {
+
+		@Override
+		public void onFinish() {
+			// TODO Auto-generated method stub
+			if (!AtualizarDadosApp.atualizandoMuseu) {
+
+				Cursor cHoteis = RecTourDatabase.recuperarMuseusDistancia(BuscarLocalizacaoAtualV2.getLocalizacao());
+
+				IFuncoesMenu iFuncoesMenuPlotarPontos = new PlotarPontosV2(
+						cHoteis, getActivity());
+				fmPlotarPontos = new FuncoesMenu(iFuncoesMenuPlotarPontos);
+				((PlotarPontosV2) fmPlotarPontos.getFuncoesMenu())
+						.setIConstruirPontos(pontosMuseus);
+				fmPlotarPontos.executarFuncao(mMap);
+
+				cAdptListaVagas = new MuseuListaADPT(getActivity(), cHoteis);
+				lvMuseu.setAdapter(cAdptListaVagas);
+				lvMuseu.setOnItemClickListener(MuseuMapFr.this);
+
+				BuscarLocalizacaoAtualV2.icallMinhaLocalizacao = MuseuMapFr.this;
+			}
+		}
+
+		@Override
+		public void onCancel() {
+
+		}
+	};
+	
+	
+	@Override
+	public void onDestroy() {
+		super.onDestroy();
+		removerFR("Mapa_Museu");
+	}
+
+	IConstruirPontos pontosMuseus = new IConstruirPontos() {
+
+		@Override
+		public MarkerOptions getMarkeOptions(LatLng local, Cursor cursor) {
+
+			String _id = cursor.getString(cursor.getColumnIndex("_id"));
+			return new MarkerOptions().position(local).snippet(_id)
+					.icon(BitmapDescriptorFactory.fromResource(R.drawable.marker_museu));
+		}
+	};
+	
+	@Override
+	public boolean onMarkerClick(Marker marker) {
+		
+		if("myLocation".equals( marker.getSnippet())){
+			return false;
+		}
+		
+		//Tira a marcação do marke anterior
+		if (markerDestino != null) {
+			markerDestino.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.marker_museu));
+		}
+
+		animateCamera(marker.getPosition(), 600, 19.0f, null);
+		
+		marker.showInfoWindow();
+		llMenu.setVisibility(View.VISIBLE);
+		markerDestino = marker;
+		marker.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.museu_off));
+
+		configurarView(marker);
+
+		return true;
+	}
+	
+	
+	public void iniciarProcesso() {
+		carregando.setVisibility(View.VISIBLE);
+	}
+
+	public void pararProgress(boolean erro) {
+		fmPlotarPontos.cancelarFuncao(1);
+		fmPlotarPontos.executarFuncao(mMap);
+		carregando.setVisibility(View.INVISIBLE);
+	}
+	
+	private void configurarView(Marker marker) {
+
+		String id = marker.getSnippet();
+
+		LatLng myLocation = BuscarLocalizacaoAtualV2.getLocalizacao();
+
+		if (id.equals("") || myLocation == null) {
+			return;
+		}
+
+		Cursor c = RecTourDatabase.recuperarMuseusDistancia(myLocation, id);
+		
+		if (c.moveToNext()) {
+
+			//String rtEndereco = c.getString(c.getColumnIndex("rtEndereco"));
+			String rtNome = c.getString(c.getColumnIndex("rtNome"));
+			nomeSelecao = rtNome;
+			//String rtTelefone = c.getString(c.getColumnIndex("rtTelefone"));
+			//String rtSite = c.getString(c.getColumnIndex("rtSite"));
+
+			double distancia = c.getDouble(c.getColumnIndex("distancia"));
+			double distanciaKm = UtilRecTour.convertPartialDistanceToKm(distancia);
+
+			tvNomeMuseu.setText(rtNome);
+			//tvTelefone.setText(rtTelefone);
+			tvDistancia.setText(UtilRecTour.getLegendaDistancia(distanciaKm));
+		}
+	}
+
+}

@@ -1,0 +1,108 @@
+package mobi.rectour.recRestaurantes.automato;
+
+import mobi.rectour.atualizacoesremotas.AtualizarDadosApp.CallBackAtualizacoesProntas;
+import mobi.rectour.geral.RecTourDatabase;
+import mobi.rectour.recRestaurantes.entidades.Restaurante;
+import mobi.rectour.web.ConexaoAndroidIceCreamGet;
+import mobi.rectour.web.IConexaoWeb;
+import mobi.rectour.web.InformacoesServidor;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import android.os.AsyncTask;
+
+public class AutomatoBuscarRestaurante {
+
+	private String UrlAcesso = "http://dados.recife.pe.gov.br/api/action/datastore_search?resource_id=%s";
+
+	private String idBaseRestaurante = "d85bf4e3-637e-4e1b-9b03-970dca4403c7";
+
+	
+
+	private CallBackAtualizacoesProntas cbap;
+	
+	
+	public AutomatoBuscarRestaurante(){
+		
+		
+	}
+		
+	public void executar(){
+		
+		new BuscarRestaurantes().execute();
+	}
+	
+	private class BuscarRestaurantes extends AsyncTask<Void, Boolean, Boolean> {
+
+		private InformacoesServidor is;
+
+		@Override
+		protected void onPreExecute() {
+			super.onPreExecute(); 
+
+		}
+
+		@Override
+		protected Boolean doInBackground(Void... params) {
+
+			RecTourDatabase.deleteAllRestauranteParaTestes();
+			
+			IConexaoWeb conWeb = new ConexaoAndroidIceCreamGet(String.format(UrlAcesso,
+					idBaseRestaurante));
+
+			String retorno = conWeb.buscarServidor();
+			
+
+			is = conWeb.verificarObjRespostaServidorRetorno(retorno);
+
+			if (is.getStatusRequisicao()) {
+
+				
+				try {
+					
+					JSONObject jsRetorno = new JSONObject(retorno).getJSONObject("result");
+					
+					JSONArray arrRestaurantes =  jsRetorno.getJSONArray("records");
+
+					for (int i = 0; i < arrRestaurantes.length(); i++) {
+
+						JSONObject entRestaurante = arrRestaurantes.getJSONObject(i);
+
+						Restaurante restaurante = new Restaurante(entRestaurante);
+						
+						RecTourDatabase.inserirRestauranteParaTestes(restaurante);
+						
+					}
+
+				} catch (JSONException e) {
+					e.printStackTrace();
+				}
+			}
+			return is.getStatusRequisicao();
+		}
+
+		@Override
+		protected void onPostExecute(Boolean result) {
+			super.onPostExecute(result);
+
+			if (cbap != null) {
+
+				cbap.operacaoConcluida(1);
+
+			}
+
+		}
+
+	}
+
+	public CallBackAtualizacoesProntas getCbap() {
+		return cbap;
+	}
+
+	public void setCbap(CallBackAtualizacoesProntas cbap) {
+		this.cbap = cbap;
+	}
+
+}

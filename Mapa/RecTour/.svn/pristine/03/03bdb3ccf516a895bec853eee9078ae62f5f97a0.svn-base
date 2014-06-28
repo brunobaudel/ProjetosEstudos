@@ -1,0 +1,101 @@
+package mobi.rectour.util;
+
+
+import java.util.ArrayList;
+import java.util.List;
+
+import mobi.rectour.R;
+import android.app.ProgressDialog;
+import android.content.Context;
+import android.view.ViewTreeObserver;
+import android.view.ViewTreeObserver.OnGlobalLayoutListener;
+import android.widget.ImageView;
+import android.widget.RelativeLayout;
+
+public class ProgressDialogRecTour extends ProgressDialog {
+
+	
+	private Context c;
+	
+	private RelativeLayout rl;
+	
+	
+	private ImageView bk;
+	private ImageView bk2;
+	
+	
+	private AninCircular aninBks;
+	
+	
+	private String msgDialog;
+	
+	private boolean indeterminate;
+	private boolean cancelable;
+	private OnCancelListener onCancelListener;
+	
+	public ProgressDialogRecTour(Context context) {
+		super(context);
+		indeterminate = false;
+		cancelable = false; 
+		c = context;
+	}
+	
+	@Override
+	public void show() {
+		
+		super.show();
+		
+		setContentView(R.layout.progressdialog_rectour);
+		
+		rl =  (RelativeLayout)findViewById(R.id.rlDialog);
+		
+	
+		   
+		  ViewTreeObserver vto = rl.getViewTreeObserver();
+		  vto.addOnGlobalLayoutListener(new OnGlobalLayoutListener() {
+
+		   
+		    public void onGlobalLayout() {
+		        int tamanhoView = rl.getHeight();
+		        int tamanhoViewWidth = rl.getWidth();
+		        
+		        ViewTreeObserver obs = rl.getViewTreeObserver();
+		        obs.removeGlobalOnLayoutListener(this);
+		        
+		        bk = (ImageView) rl.findViewById(R.id.ivRecTuor);
+				bk2 = (ImageView) rl.findViewById(R.id.ivRecTuor2);
+				
+				List<ImageView> lstImgViews = new ArrayList<ImageView>();
+				lstImgViews.add(bk);
+				lstImgViews.add(bk2);
+				
+				aninBks = new AninCircular(lstImgViews);
+				aninBks.setWidth(tamanhoViewWidth);
+				aninBks.initAnin();
+		         
+		    }
+		  });
+		
+	}
+	
+	public String getMsgDialog() {
+		return msgDialog;
+	}
+
+
+	public void setMsgDialog(String msgDialog) {
+		this.msgDialog = msgDialog;
+	}
+
+
+	public OnCancelListener getOnCancelListener() {
+		return onCancelListener;
+	}
+
+
+	public void setOnCancelListener(OnCancelListener onCancelListener) {
+		this.onCancelListener = onCancelListener;
+	}
+	
+
+}

@@ -1,0 +1,25 @@
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true" >
+
+    <mobi.rectour.recRoteirosTurismoLazer.gui.museu.MuseuLayoutCard
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#e3e3e3"
+        android:orientation="vertical" >
+
+    	<TextView
+        	android:id="@+id/tvNome"
+            style="@style/nowCardStyle"
+        	android:layout_width="match_parent"
+        	android:layout_height="wrap_content"
+        	android:text="Nome Estabelecimento"
+        	android:textSize="18sp" />
+    	
+    </mobi.rectour.recRoteirosTurismoLazer.gui.museu.MuseuLayoutCard>
+
+</ScrollView>
+
+

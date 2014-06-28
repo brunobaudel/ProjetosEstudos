@@ -1,0 +1,117 @@
+package mobi.rectour.mapa.funcoes.v2.funcTracarRotas;
+
+import mobi.rectour.mapa.funcoes.FuncoesMenu.IFuncoesMenu;
+
+public class TracarRotasV2 implements IFuncoesMenu{
+
+	@Override
+	public void execute(Object o) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void cancel(Object o) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	/*private Cursor cursor;
+	private RepositorioRotas repoRotas;
+	private GoogleMap mMap;
+	
+	private Map<Integer, Polyline> mapPolyline = new HashMap<Integer, Polyline>();
+	private List<Integer> idRotasBd = new ArrayList<Integer>();
+	
+	public TracarRotasV2(Cursor c,Context context){
+		this.cursor = c;
+		repoRotas = new RepositorioRotas(context);
+	}
+	
+	@Override
+	public void execute(Object o) {
+		mMap = (GoogleMap) o;
+		
+		new PlotarAsync().execute();
+		
+	}
+
+	@Override
+	public void cancel(Object o) {
+		// TODO Auto-generated method stub
+		
+	}
+	
+	public void visibilidadeRota(int IdRota, boolean visibilidade){
+		
+		mapPolyline.get(idRotasBd.get(IdRota)).setVisible(visibilidade);
+		
+		
+		//mapPolyline.get(idRotasBd.get(IdRota)).getPoints().get(0);
+	}
+	
+	
+	private class PlotarAsync extends AsyncTask<Void, Void, Void>{
+		
+		List<PolylineOptions> listPolyLines = new ArrayList<PolylineOptions>();
+		
+		
+		@Override
+		protected synchronized  Void doInBackground(Void... params) {
+			
+			while (cursor.moveToNext()) {
+				//Pergar o id da possicao atual
+				String idRotas =  cursor.getString(cursor.getColumnIndex("id_rota"));
+				
+				Cursor rota = repoRotas.getRotasId(idRotas);
+				Cursor style = repoRotas.getStyleRotasId(idRotas);
+				
+				int   color =  0xff000000;
+				float width = 5;
+				if(style.moveToNext()){
+					//color = style.getInt(style.getColumnIndex("color"));
+					width = style.getInt(style.getColumnIndex("width"));
+				}
+				
+				
+				listPolyLines.add( cursorToPolylineOptions(rota,color,width));
+				idRotasBd.add(Integer.valueOf(idRotas));
+				
+			}
+		
+			return null;
+		}
+		
+		@Override
+		protected void onPostExecute(Void result) {
+			super.onPostExecute(result);
+			for (int i = 0; i < listPolyLines.size(); i++) {
+				mapPolyline.put(idRotasBd.get(i),  mMap.addPolyline(listPolyLines.get(i)));
+			}
+			
+		}
+		
+		 private PolylineOptions cursorToPolylineOptions(Cursor cursor,int color,float width){
+			 
+			 
+			 
+			 PolylineOptions polylineOptions = new PolylineOptions();
+			 
+			 polylineOptions.color(color);
+			 polylineOptions.width(width);
+			 
+			 while (cursor.moveToNext()) {
+				Double lat = (Double.valueOf( cursor.getString(cursor.getColumnIndex("Latitude"))) );
+				Double lon = (Double.valueOf( cursor.getString(cursor.getColumnIndex("Longitude"))) );//* 1E6
+				LatLng ponto = new LatLng((double)lat, (double)lon);//*1E-5
+				polylineOptions.add(ponto);
+		     }
+			 	
+			return polylineOptions;
+		 }
+		
+	}*/
+
+	
+	
+}

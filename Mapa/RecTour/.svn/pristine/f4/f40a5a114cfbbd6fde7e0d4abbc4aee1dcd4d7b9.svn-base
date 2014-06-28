@@ -1,0 +1,69 @@
+package mobi.rectour.util;
+
+import mobi.rectour.geral.RecTourDatabase;
+
+public class UtilRecTour {
+
+	
+	
+	public static Object getObjectType(Object obj){
+		
+		if(obj instanceof String){
+		
+			obj = (String) obj;
+			
+		}else if(obj instanceof Integer){
+			
+			obj = (Integer) obj;
+			
+		}else if(obj instanceof Double){
+			obj = (Double) obj;
+		}
+		
+		return obj;
+		
+	}
+	
+	public static double deg2rad(double deg) {
+		return (deg * Math.PI / 180.0);
+	}
+	
+	
+	
+	public static double convertPartialDistanceToKm(double result) {
+	    return Math.acos(result) * 6371;
+	}
+	
+	
+	public static String getLegendaDistancia(double distanciaKm) {
+
+		String retorno = "";
+
+		if (distanciaKm >= 1.0) {
+
+			retorno = String.format("%.2f %s", distanciaKm, "Km");
+
+		} else {
+			retorno = String.format("%.0f %s", distanciaKm * 1000, "M");
+
+		}
+
+		return retorno;
+	}
+	
+	
+	public static String buildDistanceQuery(double latitude, double longitude) {
+		final double coslat = Math.cos(deg2rad(latitude));
+		final double sinlat = Math.sin(deg2rad(latitude));
+		final double coslng = Math.cos(deg2rad(longitude));
+		final double sinlng = Math.sin(deg2rad(longitude));
+		// @formatter:off
+		return "(" + coslat + "*" + RecTourDatabase.CAMPO_TB_LATITUDE_COS + "*("
+				+ RecTourDatabase.CAMPO_TB_LONGITUDE_COS + "*" + coslng + "+"
+				+ RecTourDatabase.CAMPO_TB_LONGITUDE_SEN + "*" + sinlng + ")+" + sinlat + "*"
+				+ RecTourDatabase.CAMPO_TB_LATITUDE_SEN + ") as distancia";
+		// @formatter:on
+	}
+	
+	
+}

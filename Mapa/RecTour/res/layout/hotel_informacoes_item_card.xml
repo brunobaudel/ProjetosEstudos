@@ -1,0 +1,50 @@
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="fill_parent" >
+
+    <mobi.rectour.recRoteirosTurismoLazer.gui.museu.MuseuLayoutCard
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#e3e3e3"
+        android:orientation="vertical" >
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+             style="@style/nowCardStyle"
+            android:padding="10dp" >
+
+            <ImageView
+                android:id="@+id/ivFoto"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingLeft="10dp"
+                android:src="@drawable/icon_carregando" />
+
+            <TextView
+                android:id="@+id/tvComentario"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_toRightOf="@id/ivFoto"
+                android:paddingLeft="20dp"
+                android:text="TextView" />
+
+            <TextView
+                android:id="@+id/tvNomeUsuario"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/ivFoto"
+                android:text="TextView" />
+
+            <TextView
+                android:id="@+id/tvDataComentario"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/tvNomeUsuario"
+                android:text="TextView" />
+
+        </RelativeLayout>
+    
+    </mobi.rectour.recRoteirosTurismoLazer.gui.museu.MuseuLayoutCard>
+
+</FrameLayout>

@@ -1,0 +1,63 @@
+package mobi.rectour.recRestaurantes.gui;
+
+import mobi.rectour.R;
+import android.content.Context;
+import android.database.Cursor;
+import android.support.v4.widget.CursorAdapter;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+
+public class CursorADPTListaVagas extends CursorAdapter {
+
+	
+	
+	
+	public CursorADPTListaVagas(Context context, Cursor cursor) {
+		super(context, cursor, true);
+		
+	}
+
+	@Override
+	public void bindView(View view, Context context, Cursor cursor) {
+		
+		//TextView ruas;
+		//String stRuas = cursor.getString(cursor.getColumnIndex(""));
+		//(ruas =  (TextView) view.findViewById(R.id.)).setText(stRuas);
+		//String placa = cursor.getString(cursor.getColumnIndex(BdPlacas.CAMPO_TB_PLACA));
+		//ruas.setTag(stRuas);
+//		
+//		String logradouro 		 = cursor.getString(cursor.getColumnIndex("logradouro"));
+//		
+//		String totalVagas 		 = cursor.getString(cursor.getColumnIndex("TotalVagas"));
+//		String vagasLivres 		 = cursor.getString(cursor.getColumnIndex("VagasLivres"));
+//		String UltivaAtualizacao = cursor.getString(cursor.getColumnIndex("UltimaAtualizacaoEmMinutos"));
+//		
+//		double Distancia 		 = cursor.getDouble(cursor.getColumnIndex("distancia"));
+//		
+//		
+//		double distanciaKm       =  UtilRecTour.convertPartialDistanceToKm(Distancia);
+		
+		//((TextView) view.findViewById(R.id.tvLogradouro)).setText(logradouro);
+		
+		//((RelativeLayout)view.findViewById(R.id.balloon_main_layout)).setBackgroundResource(backgroundResource(Integer.valueOf(vagasLivres)));
+	
+		    
+	}
+
+	@Override
+	public View newView(Context context, Cursor cursor, ViewGroup parent) {
+		
+		LayoutInflater inflater = LayoutInflater.from(parent.getContext());
+        View retView = inflater.inflate(R.layout.vagas_lista_item, parent, false);
+		
+		
+		return retView;
+	}
+	
+	
+	
+	
+	
+
+}

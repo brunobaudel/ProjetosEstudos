@@ -1,0 +1,160 @@
+package mobi.rectour.util;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.json.JSONArray;
+
+import mobi.rectour.geral.RecTourDatabase;
+import android.content.Context;
+import android.location.Address;
+import android.location.Geocoder;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
+
+import com.google.android.gms.maps.model.LatLng;
+
+public class UtilRecTour {
+
+	public static Object getObjectType(Object obj) {
+
+		if (obj instanceof String) {
+
+			obj = (String) obj;
+
+		} else if (obj instanceof Integer) {
+
+			obj = (Integer) obj;
+
+		} else if (obj instanceof Double) {
+			
+			obj = (Double) obj;
+			
+		}else if (obj instanceof JSONArray){
+			obj = (JSONArray) obj;
+		}
+		
+		
+
+		return obj;
+
+	}
+
+	public static double deg2rad(double deg) {
+		return (deg * Math.PI / 180.0);
+	}
+
+	public static double convertPartialDistanceToKm(double result) {
+		return Math.acos(result) * 6371;
+	}
+
+	public static String getLegendaDistancia(double distanciaKm) {
+
+		String retorno = "";
+
+		if (distanciaKm >= 1.0) {
+
+			retorno = String.format("%.2f %s", distanciaKm, "Km");
+
+		} else {
+			retorno = String.format("%.0f %s", distanciaKm * 1000, "M");
+
+		}
+
+		return retorno;
+	}
+
+	public static String buildDistanceQuery(double latitude, double longitude) {
+		final double coslat = Math.cos(deg2rad(latitude));
+		final double sinlat = Math.sin(deg2rad(latitude));
+		final double coslng = Math.cos(deg2rad(longitude));
+		final double sinlng = Math.sin(deg2rad(longitude));
+		// @formatter:off
+		return "(" + coslat + "*" + RecTourDatabase.CAMPO_TB_LATITUDE_COS
+				+ "*(" + RecTourDatabase.CAMPO_TB_LONGITUDE_COS + "*" + coslng
+				+ "+" + RecTourDatabase.CAMPO_TB_LONGITUDE_SEN + "*" + sinlng
+				+ ")+" + sinlat + "*" + RecTourDatabase.CAMPO_TB_LATITUDE_SEN
+				+ ") as distancia";
+		// @formatter:on
+	}
+
+	public static boolean isNetworkAvailable(Context context) {
+		ConnectivityManager connectivityManager = (ConnectivityManager) context
+				.getSystemService(Context.CONNECTIVITY_SERVICE);
+		NetworkInfo activeNetworkInfo = connectivityManager
+				.getActiveNetworkInfo();
+		return activeNetworkInfo != null && activeNetworkInfo.isConnected();
+	}
+
+	private static Geocoder geoCoder;
+
+	private static Geocoder getGeoCoder(Context context) {
+
+		if (geoCoder == null) {
+			geoCoder = new Geocoder(context);
+
+		}
+		return geoCoder;
+	}
+
+	public static LatLng getLatLng(Context context, String endereco) {
+
+		List<Address> listAddress = new ArrayList<Address>();
+
+		try {
+
+			listAddress = getGeoCoder(context).getFromLocationName(endereco, 2);
+
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+		LatLng retorno = new LatLng(0, 0);
+
+		if (!listAddress.isEmpty())
+			retorno = new LatLng(listAddress.get(0).getLatitude(), listAddress
+					.get(0).getLongitude());
+
+		return retorno;
+
+	}
+
+	public static List<LatLng> decodePolyLine(final String poly) {
+		int len = poly.length();
+		int index = 0;
+		List<LatLng> decoded = new ArrayList<LatLng>();
+
+		int lat = 0;
+		int lng = 0;
+
+		while (index < len) {
+			int b;
+			int shift = 0;
+			int result = 0;
+			do {
+				b = poly.charAt(index++) - 63;
+				result |= (b & 0x1f) << shift;
+				shift += 5;
+			} while (b >= 0x20);
+			int dlat = ((result & 1) != 0 ? ~(result >> 1) : (result >> 1));
+			lat += dlat;
+
+			shift = 0;
+			result = 0;
+			do {
+				b = poly.charAt(index++) - 63;
+				result |= (b & 0x1f) << shift;
+				shift += 5;
+			} while (b >= 0x20);
+
+			int dlng = ((result & 1) != 0 ? ~(result >> 1) : (result >> 1));
+			lng += dlng;
+
+			decoded.add(new LatLng((float) (lat / 1E5), (float) (lng / 1E5)));
+		}
+		return decoded;
+	}
+
+}

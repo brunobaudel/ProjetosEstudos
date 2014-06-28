@@ -1,0 +1,83 @@
+package mobi.rectour.mapa.funcoes.foursquare.listtips;
+
+import java.util.List;
+
+import mobi.rectour.R;
+import mobi.rectour.mapa.funcoes.foursquare.entidadestips.Items;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.BaseAdapter;
+import android.widget.ImageView;
+import android.widget.TextView;
+
+public class TipsADPT extends BaseAdapter {
+
+	private List<Items>  listVenues;
+	private LayoutInflater inflater;
+	
+	
+	public TipsADPT(List<Items> listVenuesTips,LayoutInflater infltr){
+		
+		this.listVenues = listVenuesTips;
+		this.inflater = infltr;
+	}
+	
+	@Override
+	public int getCount() {
+		
+		return listVenues.size();
+	}
+
+	@Override
+	public Object getItem(int position) {
+		
+		return listVenues.get(position);
+	}
+
+	@Override
+	public long getItemId(int position) {
+		
+		return  0;//Long.valueOf( lstHistorico.get(position).getId().replaceAll("[a-zA-Z]", ""));
+	}
+
+	@Override
+	public View getView(int position, View convertView, ViewGroup parent) {
+		
+		ViewHolder holder;
+		
+		if (convertView == null) {
+			convertView = inflater.inflate(R.layout.hotel_informacoes_item_card, null);
+			
+			holder = new ViewHolder();
+			holder.tvComentario = (TextView) convertView.findViewById(R.id.tvComentario);
+			holder.ivFoto = (ImageView) convertView.findViewById(R.id.ivFoto);
+			
+			
+			convertView.setTag(holder);
+		} else {
+			holder = (ViewHolder) convertView.getTag();
+		}
+		
+		Items tipsVenue = listVenues.get(position);
+		
+		holder.tvComentario.setText(tipsVenue.getText());
+		//holder.ivFoto.setBackgroundResource(tipsVenue.getIdIcone());
+		
+		
+		
+		
+		return convertView;
+	}
+	
+	
+	
+	public static final class ViewHolder {
+		public TextView  tvComentario;
+		public ImageView ivFoto;
+		
+		
+	}
+
+	
+}

@@ -1,0 +1,455 @@
+package mobi.rectour.bod.gui;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Observable;
+import java.util.Observer;
+import java.util.Set;
+
+import mobi.rectour.R;
+import mobi.rectour.bod.bd.FactoryRepositorios;
+import mobi.rectour.bod.bd.IRepositorio;
+import mobi.rectour.bod.entidades.P;
+import mobi.rectour.bod.repositorios.RepE_;
+import mobi.rectour.mapa.funcoes.FuncoesMenu;
+import mobi.rectour.mapa.funcoes.FuncoesMenu.IFuncoesMenu;
+import mobi.rectour.mapa.funcoes.v2.funcTracarRotas.TracarRotasV2;
+import mobi.rectour.mapa.funcoes.v2.plotarpontos.PlotarPontosV2;
+import mobi.rectour.mapa.funcoes.v2.plotarpontos.PlotarPontosV2.IConstruirPontos;
+import mobi.rectour.util.SupportMapFragmentRecTour;
+import mobi.rectour.util.SupportMapFragmentRecTour.OnGoogleMapFragmentListener;
+import mobi.rectour.util.TouchableWrapper.onTouchNotification;
+import android.app.Activity;
+import android.database.Cursor;
+import android.graphics.Point;
+import android.os.Bundle;
+import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentTransaction;
+import android.util.Log;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.View.OnClickListener;
+import android.view.ViewGroup;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import com.google.android.gms.maps.CameraUpdateFactory;
+import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.GoogleMap.CancelableCallback;
+import com.google.android.gms.maps.Projection;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
+import com.google.android.gms.maps.model.CameraPosition;
+import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.maps.model.VisibleRegion;
+
+
+public class MapaE_FR extends Fragment implements
+		 OnClickListener, Observer , Runnable   , OnGoogleMapFragmentListener ,onTouchNotification{
+	
+	
+	public static String PKG_Mapa_Parada = "mobi.rectour.bod.gui.MapaE_FR";
+	
+
+	// Mapa
+	public GoogleMap mMap;
+	public FragmentTransaction tx;
+	public SupportMapFragmentRecTour sMf;
+	
+	// Funções do menu
+	FuncoesMenu fmPlotarPontos;
+	public TracarRotasV2 trV2;
+	
+	//private AutoCompleteTextView autoCompleteLocais;
+	
+	
+	// **** Controle do id para solicitacao de busca dos anuncios
+
+	private static int CodConsulta;
+
+	IRepositorio repositorios;
+	// ****
+	
+	Point posicaoInicial;
+	Point deslocamento;
+	
+	LatLng geoInicial;
+	
+	TextView procurar;
+	boolean buscar ;
+	
+	
+	
+	IConstruirPontos pontosParadas = new IConstruirPontos() {
+
+		@Override
+		public MarkerOptions getMarkeOptions(LatLng local, Cursor cursor) {
+
+			String _id = cursor.getString(cursor.getColumnIndex("_id"));
+			return new MarkerOptions().position(local).snippet(_id)
+					.icon(BitmapDescriptorFactory.fromResource(R.drawable.marker_hotel_));
+		}
+	};
+	
+	
+
+	public void preExecute(Bundle parametro) {
+		
+		buscar = false;
+		
+		//posicao central
+		Point posicaoMeioFixa = getPonit(2,2);//Pegar metade da largura e altura 
+		
+		// posicao inicial
+		posicaoInicial =  mMap.getProjection().toScreenLocation(geoInicial); 
+
+		
+		Point quatroAvosTela = getPonit(2, 4); //Pega 2/4 da tela
+//		
+		
+		double distanciaParaMeioTela  = Math.floor(Math.abs(Math.sqrt( (Math.pow(0 - quatroAvosTela.x,2) + 
+                											            Math.pow( 0 - quatroAvosTela.y,2)))));
+//		
+		
+		double distanciaEntrePontosPixel = Math.floor(Math.abs(Math.sqrt( (Math.pow(posicaoMeioFixa.x-posicaoInicial.x,2) + 
+				                                               Math.pow(posicaoMeioFixa.y-posicaoInicial.y,2)))));
+		
+		List<LatLng> listGeo = new ArrayList<LatLng>();
+		
+		listGeo.add( mMap.getProjection().fromScreenLocation(getPonit(2,2))); //Pega a latLng central do mapa
+		
+		
+//		Overlay ovPontoCentralTela = new OverlayPntosAuxiliares(mapView.getProjection(),listGeo);
+//		mapView.getOverlays().add(ovPontoCentralTela);
+//		mapView.invalidate();
+		
+		
+		if(distanciaEntrePontosPixel > distanciaParaMeioTela){
+			//Nao vai fazer a busca porque esta dentro do intervalo estabelecido no inicio do processo 
+			buscar = true;
+		}
+		
+	}
+	
+	List<P> listaAnterior;
+	float zoomAnterior;
+	
+
+	public void execute()  {
+		
+		LatLng center =  mMap.getProjection().fromScreenLocation(getPonit(2, 2));    //mapView.getMapCenter();
+		
+		LatLng esquerda =  mMap.getProjection().fromScreenLocation(getPonit(1, 1));    //mapView.getMapCenter();
+		
+		
+		//RepE_.DistanciaCentral = ConvertToLatLong.getDistanciaCentroToOutherLatLng(center , esquerda);
+		
+		
+		
+		//String key = String.format("%d,%d",  center.getLatitudeE6() , center.getLongitudeE6() );
+		
+//		if(!mapaPesquisa.containsKey(key)){
+//			chavePesquisaMap = key;
+			 
+		
+			mMap.clear();
+			List<P> listE =  buscar ?  ((RepE_)repositorios).recuperarItemizedOverlay(center,  esquerda) : listaAnterior ;
+		   
+			
+			Cursor cParadas =   ((RepE_)repositorios).recuperarParadas(center,esquerda);
+
+			IFuncoesMenu iFuncoesMenuPlotarPontos = new PlotarPontosV2(
+					cParadas, getActivity());
+			fmPlotarPontos = new FuncoesMenu(iFuncoesMenuPlotarPontos);
+			((PlotarPontosV2) fmPlotarPontos.getFuncoesMenu())
+					.setIConstruirPontos(pontosParadas);
+			fmPlotarPontos.executarFuncao(mMap);
+			
+			Toast.makeText(getActivity(), "Teste " + listE.size() , Toast.LENGTH_SHORT).show();
+			
+//			listaAnterior = listE;
+//			mapaPesquisa.put(chavePesquisaMap, listaPontosParadas);
+			
+//			ItemizedOverlayFrMapa lstPesquisaMapa =  new ItemizedOverlayFrMapa(getResources().getDrawable(R.drawable.mk_parada), mapView) ;
+			
+			
+			//if(buscar)
+//			filtrarPontosProximosNaListaOverlay(listE);
+			
+//			parametro.putSerializable("Lista", (Serializable) listE);
+//			parametro.putSerializable("Lista", lstPesquisaMapa);
+//		}
+	}
+	
+	
+	
+	public void updateView(Bundle parametro) {
+		
+		
+		if(buscar || zoomAnterior != mMap.getCameraPosition().zoom){
+//			ItemizedOverlayFrMapa lstPesquisaMapa =  new ItemizedOverlayFrMapa(getResources().getDrawable(R.drawable.mk_parada), mapView) ;
+//			
+//			filtrarPontosProximosNaListaOverlay((List<P>) parametro.getSerializable("Lista"),lstPesquisaMapa);
+			
+			
+			//ItemizedOverlayFrMapa lstPesquisaMapa  = (ItemizedOverlayFrMapa) parametro.getSerializable("Lista");
+			
+//			ItemizedOverlayFrMapa lstPesquisaMapa  = ((ItemizedOverlayFrMapa) parametro.getSerializable("Lista"));
+//			lstPesquisaMapa.populateNow();
+	//		
+//			mapView.getOverlays().clear();
+//			mapView.getOverlays().add(lstPesquisaMapa);//mapaPesquisa.get(chavePesquisaMap));
+//			mapView.invalidate();
+		//mapaPesquisa.clear();
+		}
+	}
+	
+	
+	private void filtrarPontosProximosNaListaOverlay(List<P> list){
+		
+		Projection proj = mMap.getProjection();
+		int densityX = 10;
+        int densityY = 10;
+        int binX;
+        int binY;
+        Map<String, List<P>> mapP = new HashMap<String, List<P>>();
+        
+		for (P parada : list) {
+			
+			Double lat = Double.valueOf(parada.getLatitude())  * -1E6;
+			Double log = Double.valueOf(parada.getLongitude()) * -1E6;
+			
+			LatLng point = new LatLng(lat.intValue(),log.intValue());
+			
+			Point p = proj.toScreenLocation(point);
+			parada.setP(p);
+			
+			//Pega onde esta o ponto na matriz como multiplica por 1 pega o tamanho total
+			Point ponto = getPonit(1, 1);
+			
+			double fractionX = ((double)p.x / (double)ponto.x);
+	        binX =  (int) (Math.floor(densityX * fractionX));
+	        
+	        double fractionY = ((double)p.y / (double)ponto.y);
+	        binY =  (int) (Math.floor(densityY * fractionY));
+	        
+	       String key = binX + "," + binY;
+	        
+	       if( mapP.containsKey(key) ){
+	    	    mapP.get(key).add(parada);
+	       }else{
+	    		List<P> listP = new ArrayList<P>();
+	    		listP.add(parada);
+	    		mapP.put(key, listP);
+	    	}
+		}
+		int marker = 0;
+		
+		Set<String> chaves = mapP.keySet();  
+		for (String chave : chaves){
+			
+			 List<P> markerList = mapP.get(chave);
+			 if (markerList.size() > 1) {
+				 
+				    marker = R.drawable.hotel_on;
+				    Collections.sort(markerList);
+                    
+				    Double lat = Double.valueOf(markerList.get(0).getLatitude())  * -1E6;
+    	  			Double log = Double.valueOf(markerList.get(0).getLongitude()) * -1E6;
+    				
+    				LatLng point = new LatLng(lat.intValue(),log.intValue());
+				    
+    				if(point == null){
+    					Log.d("PontoNulo", String.format("O ponto %s e nulo.",markerList.get(0).getCodigoParada()));
+    				}
+    				//Add marker que representa varios markers
+    				
+                } else   {
+                	
+                	Double lat = Double.valueOf(markerList.get(0).getLatitude())  * -1E6;
+    	  			Double log = Double.valueOf(markerList.get(0).getLongitude()) * -1E6;
+    				
+    	  			LatLng point = new LatLng(lat.intValue(),log.intValue());
+				    
+    	  			//add o marker sozinho 
+    			}
+		}
+		
+	}
+	
+	@Override
+	public void onClick(View v) {
+
+	}
+
+	@Override
+	public void update(Observable observable, Object data) {
+		
+	}
+
+	@Override
+	public void run() {
+		
+		getTopLeftCenterMapPoints();
+	}
+	
+	private void getTopLeftCenterMapPoints(){
+		
+	}
+		
+	//Inicio Carregamento do mapa
+	
+	
+	@Override
+	public void onAttach(Activity activity) {
+		super.onAttach(activity);
+
+		tx = getActivity().getSupportFragmentManager().beginTransaction();
+
+		sMf = SupportMapFragmentRecTour.newInstance();
+		sMf.setmCallback(this);
+		sMf.setOnTouchNotification(this);
+		
+		tx.replace(R.id.fl_map_paradas, sMf, "Mapa_Hotel");
+
+		tx.commit();
+
+		// Set callback atualização
+		// AtualizarDadosApp.iAtualizacoesFinalizadas = this;
+	}
+	
+	
+	@Override
+	public void onMapReady(GoogleMap map) {
+		
+		mMap = map;
+		
+		 
+		animateCamera( new LatLng(-8.060238799021613,-34.87238612025976) , 300, 15, null);
+		
+		// Hide the zoom controls as the button panel will cover it.
+		mMap.getUiSettings().setZoomControlsEnabled(false);
+//		mMap.setOnMarkerClickListener(this);
+		
+	}
+	
+	//Fim carregamento do mapa
+	
+	@Override
+	public View onCreateView(LayoutInflater inflater, ViewGroup container,Bundle savedInstanceState) {
+
+		View view = inflater.inflate(R.layout.paradas_mapa, container, false);
+		
+		// Pega a instancia do mapa, atribui o listner para quando o mapa se
+		// mover e pega o controle do mapa
+		//mapView.setOnTouchListener(this);
+		
+		procurar = (TextView) view.findViewById(R.id.tvProcurarParadas);
+				
+		posicaoInicial = new Point();
+		deslocamento   = new Point();
+				
+        repositorios = FactoryRepositorios.createRepositorios(RepE_.REPOSITORIO_PARADA, getActivity());
+			
+		//ponto inicial
+				
+		//lista os pontos anteriores
+		listaAnterior = new ArrayList<P>();
+		
+		return view;
+	}
+	
+	
+	
+	//Util RecTour
+	
+	private Point getPonit(int divisorLargura , int divisorAltura){
+		
+		VisibleRegion visibleRegion = mMap.getProjection()
+                .getVisibleRegion();
+
+		Point x = mMap.getProjection().toScreenLocation(
+		                visibleRegion.farRight);
+		
+		Point y = mMap.getProjection().toScreenLocation(
+		                visibleRegion.nearLeft);
+		
+		Point centerPoint = new Point(x.x / divisorLargura, y.y / divisorAltura);
+		
+		return centerPoint;
+		
+	}
+
+	@Override
+	public void actionDown() {
+		
+		
+		geoInicial =  mMap.getProjection().fromScreenLocation(getPonit(2, 2));    //mapView.getMapCenter();
+		zoomAnterior = mMap.getCameraPosition().zoom;
+		
+		
+		List<LatLng> listGeo = new ArrayList<LatLng>();
+		
+		
+		listGeo.add(geoInicial);
+		
+	}
+
+	@Override
+	public void actionUP() {
+		
+		//startTask(null);
+		
+	}
+
+	@Override
+	public void actionMove() {
+
+		posicaoInicial = mMap.getProjection().toScreenLocation(geoInicial);
+		Point posicaoMeioFixa = getPonit(2, 2);
+		
+		Point quatroAvosTela = getPonit(2, 4); //Pega 2/4 da tela
+					
+		double distanciaParaMeioTela  = Math.floor(Math.abs(Math.sqrt( (Math.pow(0 - quatroAvosTela.x,2) + 
+	            Math.pow( 0 - quatroAvosTela.y,2)))));
+
+		double distanciaEntrePontosPixel = Math.floor(Math.abs(Math.sqrt( (Math.pow(posicaoMeioFixa.x-posicaoInicial.x,2) + 
+		           Math.pow(posicaoMeioFixa.y-posicaoInicial.y,2)))));
+		
+		
+//		List<GeoPoint> listGeo = new ArrayList<GeoPoint>();
+		
+		
+		if(distanciaEntrePontosPixel > distanciaParaMeioTela){
+			procurar.setVisibility(View.VISIBLE);
+			buscar = true;
+			execute();
+			
+		}else{
+			procurar.setVisibility(View.GONE);
+		}
+		
+		//Mostra o ponto para conferir
+//		Overlay ovPontoCentralTela = new OverlayPntosAuxiliares(mapView.getProjection(),listGeo);
+//		
+//		
+//		mapView.getOverlays().add(ovPontoCentralTela);
+//		mapView.invalidate();
+		
+	}
+	
+	public void animateCamera(LatLng posicao, int duracao , float zoom, CancelableCallback callback){
+		
+		CameraPosition posicaoCameraClicada = new CameraPosition.Builder()
+		.target(posicao).zoom(zoom).build();
+		
+		mMap.animateCamera(
+				CameraUpdateFactory.newCameraPosition(posicaoCameraClicada),
+				duracao, callback);
+	}
+
+	
+}

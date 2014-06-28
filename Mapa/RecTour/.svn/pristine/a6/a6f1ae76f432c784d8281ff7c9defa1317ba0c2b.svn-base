@@ -1,0 +1,122 @@
+package mobi.rectour.mapa.funcoes.v2.funcMyLocation;
+
+import mobi.rectour.R;
+import mobi.rectour.mapa.funcoes.FuncoesMenu.IFuncoesMenu;
+import android.content.Context;
+import android.location.Location;
+import android.os.Bundle;
+
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.GooglePlayServicesClient.ConnectionCallbacks;
+import com.google.android.gms.common.GooglePlayServicesClient.OnConnectionFailedListener;
+import com.google.android.gms.location.LocationClient;
+import com.google.android.gms.location.LocationListener;
+import com.google.android.gms.location.LocationRequest;
+import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
+import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
+import com.google.android.gms.maps.model.MarkerOptions;
+
+public class LocalizacaoAtualV2 implements IFuncoesMenu, ConnectionCallbacks,
+		OnConnectionFailedListener, LocationListener{
+
+	public interface ICallBackMinhaLocalizacao{
+		
+		
+		
+	}
+	Context c;
+	
+	private LocationClient mLocationClient;
+	
+	private Marker myLocation;
+	private GoogleMap mMap;
+	
+	public static LatLng latLng;
+	
+
+	// These settings are the same as the settings for the map. They will in
+	// fact give you updates
+	// at the maximal rates currently possible.
+	private static final LocationRequest REQUEST = LocationRequest.create()
+			.setInterval(5000) // 5 seconds
+			.setFastestInterval(16) // 16ms = 60fps
+			.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+
+	public LocalizacaoAtualV2(Context context) {
+		
+		this.c = context;
+		
+		if (mLocationClient == null) {
+			mLocationClient = new LocationClient(context, this, // ConnectionCallbacks 
+					this); // OnConnectionFailedListener
+		}
+
+	}
+
+	
+	public void execute(Object o) {
+		
+		mMap = (GoogleMap) o;
+		
+		mLocationClient.connect();
+		
+		latLng = new LatLng(0, 0);
+		
+		MarkerOptions mo = new MarkerOptions()
+								.position(latLng)
+						        .snippet("")
+						        .visible(false)
+						        .icon(BitmapDescriptorFactory.fromResource(R.drawable.icon_my_location));
+		
+		myLocation = mMap.addMarker(mo);
+		myLocation.hideInfoWindow();
+		
+	}
+
+	
+	public void cancel(Object o) {
+		
+		if (mLocationClient != null) {
+            mLocationClient.disconnect();
+        }
+	}
+
+
+
+
+	public void onLocationChanged(Location location) {
+		
+		latLng = new LatLng(location.getLatitude(), location.getLongitude());
+		
+		myLocation.setPosition(latLng);
+		
+	}
+
+	
+	public void onConnectionFailed(ConnectionResult arg0) {
+		
+		
+	}
+
+	
+	public void onConnected(Bundle connectionHint) {
+		
+		
+		 mLocationClient.requestLocationUpdates(
+	                REQUEST,
+	                this);  // LocationListener
+		 myLocation.setVisible(true);
+	}
+
+	
+	public void onDisconnected() {
+		
+	
+
+	}
+
+	
+
+}

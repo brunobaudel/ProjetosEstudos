@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string-array name="nav_classes">
+        <item>mobi.rectour.informacoes.gui.InformacoesFr#Informações#drawable/menu_container_drawer_bt_informacoes_selector</item>
+    	<item>mobi.rectour.configuracao.Atualizacoes.ConfigAtualizacaoFr#Configurações#drawable/menu_container_drawer_bt_informacoes_selector</item>
+    	<item>mobi.rectour.configuracao.selecionaIconLocation.SelecionarIconLocationFr#Selecionar Minha Localização#drawable/menu_container_drawer_bt_informacoes_selector</item>
+   
+   	</string-array>
+   	
+     <string name="YOUR_APPLICATION_ID">7K8GuDqyCCmp5b4Wj2KdknwAXr4pv4sAVaah1iKj</string>
+    <string name="YOUR_CLIENT_KEY">5Zt4tn8nsfQdksAco2E3U5lcf0rIS5fx8frdZZHg</string>
+
+    <plurals name="plural_cartao">
+        <item quantity="one">Saldo: %s cartão.</item>
+        <item quantity="other">Saldo: %s cartões.</item>
+        <item quantity="zero">Saldo: %s cartões.</item>
+    </plurals>
+
+    <string-array name="estados">
+        <item>AC</item>
+        <item>AL</item>
+        <item>AP</item>
+        <item>AM</item>
+        <item>BA</item>
+        <item>CE</item>
+        <item>DF</item>
+        <item>ES</item>
+        <item>GO</item>
+        <item>MA</item>
+        <item>MT</item>
+        <item>MS</item>
+        <item>MG</item>
+        <item>PA</item>
+        <item>PB</item>
+        <item>PR</item>
+        <item>PE</item>
+        <item>PI</item>
+        <item>RJ</item>
+        <item>RN</item>
+        <item>RS</item>
+        <item>RO</item>
+        <item>RR</item>
+        <item>SC</item>
+        <item>SP</item>
+        <item>SE</item>
+        <item>TO</item>
+    </string-array>
+
+</resources>
